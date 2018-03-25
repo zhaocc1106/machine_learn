@@ -1,4 +1,5 @@
 from math import log
+import operator
 
 def calcShannonEnt(dataSet):
     numEntries = len(dataSet)
@@ -35,3 +36,54 @@ def splitDataSet(dataSet, feat, val):
             reducedFeatVec.extend(featVec[feat+1:])
             retDataSet.append(reducedFeatVec)
     return retDataSet
+
+# choose the best feature to split data set.
+def chooseBestFeature(dataSet):
+    numFeatures = len(dataSet[0]) - 1
+    baseEntropy = calcShannonEnt(dataSet)
+    bestInfoGain = 0.0
+    bestFeature = -1
+    for i in range(numFeatures):
+        featureList = [example[i] for example in dataSet]
+        featureSet = set(featureList)           #create unique feature list
+        newEntropy = 0.0
+        for featureValue in featureSet:
+            subDataSet = splitDataSet(dataSet, i, featureValue)     #calculate shannonEnt for every subDataSet
+            prop = len(subDataSet) / float(len(dataSet))
+            #print("\nsubDataSet splited by feature %d value %d:\n" %(i, featureValue))
+            #print(subDataSet)
+            newEntropy += prop * calcShannonEnt(subDataSet)
+        infoGain = baseEntropy - newEntropy     #calculate info gain.
+        #print("\nthe info gain splited by feature %d is %f" %(i, infoGain))
+        if (bestInfoGain < infoGain):
+            bestInfoGain = infoGain
+            bestFeature = i
+    return bestFeature
+
+def mayjorityCount(classList):
+    classCount = {}
+    for vote in classList:
+        if vote not in classCount.keys():
+            classCount[vote] = 0
+        classCount[vote] += 1
+    sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
+    return sortedClassCount[0][0]
+
+def createTree(dataSet, labels):
+    classList = [example[-1] for example in dataSet]
+    if classList.count(classList[0]) == len(dataSet):       #stop split tree when all classes is the same.
+        return classList[0]
+    if len(dataSet[0]) == 1:
+        return mayjorityCount(classList)                    #use the mayjority to represent the class.
+    bestFeat = chooseBestFeature(dataSet)
+    bestLabel = labels[bestFeat]
+    myTrees = {bestLabel:{}}
+    del(labels[bestFeat])
+    featList = [example[bestFeat] for example in dataSet]
+    featSet = set(featList)
+    for value in featSet:
+        subLabels = labels[:]
+        myTrees[bestLabel][value] = createTree(splitDataSet(dataSet, bestFeat, value), subLabels)    #create the child tree
+    # print("\nthe sub trees is")
+    print(myTrees)
+    return myTrees
