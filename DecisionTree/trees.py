@@ -69,7 +69,8 @@ def mayjorityCount(classList):
     sortedClassCount = sorted(classCount.iteritems(), key=operator.itemgetter(1), reverse=True)
     return sortedClassCount[0][0]
 
-def createTree(dataSet, labels):
+def createTree(dataSet, featLabels):
+    labels = featLabels[:]
     classList = [example[-1] for example in dataSet]
     if classList.count(classList[0]) == len(dataSet):       #stop split tree when all classes is the same.
         return classList[0]
@@ -87,3 +88,15 @@ def createTree(dataSet, labels):
     # print("\nthe sub trees is")
     print(myTrees)
     return myTrees
+
+def classify(inputTree, featLabels, testVec):
+    firstStr = list(inputTree.keys())[0]
+    secondDict = inputTree[firstStr]
+    featIndex = featLabels.index(firstStr)
+    for key in secondDict.keys():
+        if testVec[featIndex] == key:
+            if type(secondDict[key]).__name__ == "dict":                #this is dict, need continue classify.
+                classLabel = classify(secondDict[key], featLabels, testVec)
+            else:
+                classLabel = secondDict[key]                             #this is a leaf, the value is the classLabel
+    return classLabel
