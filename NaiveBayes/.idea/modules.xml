@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/kNN.iml" filepath="$PROJECT_DIR$/.idea/kNN.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/NaiveBayes.iml" filepath="$PROJECT_DIR$/.idea/NaiveBayes.iml" />
     </modules>
   </component>
 </project>
