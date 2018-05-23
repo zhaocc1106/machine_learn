@@ -154,6 +154,76 @@ def spamTest():
     print("the error rate is %f" % float(errorCount / len(testSet)))
 
 
+# 根据出现频率排序,找出出现频率最高的30个单词
+def calcMostReq(vocbList, fullText):
+    import operator
+    freqDict = {}
+    for token in vocbList:
+        freqDict[token] = fullText.count(token)
+    sortedFreq = sorted(freqDict.items(), key = operator.itemgetter(1), reverse=True)
+    return sortedFreq[:30]
+
+# 当地词汇分类测试
+def localWords(feed1, feed0):
+    import feedparser
+
+    # 导入并解析RSS
+    docList = []; classList = []; fullText = []
+    minLen = min(len(feed0['entries']), len(feed1['entries']))
+    for i in range(minLen):
+        wordList = textParse(feed1['entries'][i]['summary'])
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(1)
+
+        wordList = textParse(feed0['entries'][i]['summary'])
+        docList.append(wordList)
+        fullText.extend(wordList)
+        classList.append(0)
+
+    print("docList:", str(docList))
+    vocbList = createVocabList(docList)
+
+    # 移除30个高频词
+    top30Words = calcMostReq(vocbList, fullText)
+    for pairW in top30Words:
+        if pairW[0] in vocbList:
+            vocbList.remove(pairW[0])
+
+    # 创建随机训练词汇集
+    trainingSet = list(range(2*minLen)); testSet = []
+    print("len of trainningSet:", len(trainingSet))
+    for i in range(20):
+        randIndex = int(random.uniform(0, len(trainingSet)))
+        #print("randIndex:", randIndex)
+        testSet.append(trainingSet[randIndex])
+        del(trainingSet[randIndex])
+
+    # 生成训练词汇向量集
+    trainMat = []; trainClasses = []
+    for docIndex in trainingSet:
+        trainMat.append(bagOfWords2Vec(vocbList, docList[docIndex]))
+        trainClasses.append(classList[docIndex])
+
+    # 计算朴素贝叶斯概率
+    p1V, p0V, p1Class = trainNB0(trainMat, trainClasses)
+
+    # 计算分类错误概率
+    errorCount = 0
+    for docIndex in testSet:
+        if classifyNB(bagOfWords2Vec(vocbList, docList[docIndex]), p0V, p1V, p1Class) != \
+            classList[docIndex]:
+            errorCount += 1
+    print("the error rate: %f" % (float(errorCount) / len(testSet)))
+    return vocbList, p0V, p1V
+
+def localWordsTest():
+    import feedparser
+    ny = feedparser.parse('http://sports.qq.com/isocce/rss_isocce.xml')
+    sf = feedparser.parse('http://news.qq.com/milite/rss_milit.xml')
+    vocblist, pSF, pNY = localWords(ny, sf)
+
 if __name__ == '__main__':
      #testingNB()
-    spamTest()
+     #spamTest()
+     localWordsTest()
