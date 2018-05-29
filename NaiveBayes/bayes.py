@@ -109,6 +109,13 @@ def textParse(bigString):
     listOfTokens = re.split(r'\W*', bigString)
     return [tok.lower() for tok in listOfTokens if len(tok) > 2]
 
+# 中文句子解析
+def chineseParse(documents):
+    import jieba
+    word_cut = jieba.cut(documents)
+    word_list = list(word_cut)
+    return word_list
+
 # filter spam
 def spamTest():
     docList = []; classList = []; fullText = []
@@ -171,12 +178,12 @@ def localWords(feed1, feed0):
     docList = []; classList = []; fullText = []
     minLen = min(len(feed0['entries']), len(feed1['entries']))
     for i in range(minLen):
-        wordList = textParse(feed1['entries'][i]['summary'])
+        wordList = chineseParse(feed1['entries'][i]['summary'])
         docList.append(wordList)
         fullText.extend(wordList)
         classList.append(1)
 
-        wordList = textParse(feed0['entries'][i]['summary'])
+        wordList = chineseParse(feed0['entries'][i]['summary'])
         docList.append(wordList)
         fullText.extend(wordList)
         classList.append(0)
@@ -219,8 +226,8 @@ def localWords(feed1, feed0):
 
 def localWordsTest():
     import feedparser
-    ny = feedparser.parse('http://sports.qq.com/isocce/rss_isocce.xml')
-    sf = feedparser.parse('http://news.qq.com/milite/rss_milit.xml')
+    ny = feedparser.parse('http://sports.qq.com/isocce/rss_isocce.xml') # 体育新闻
+    sf = feedparser.parse('http://news.qq.com/milite/rss_milit.xml') # 国际新闻
     vocblist, pSF, pNY = localWords(ny, sf)
 
 if __name__ == '__main__':
