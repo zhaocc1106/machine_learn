@@ -815,7 +815,7 @@ def testRbf(k1 = 1.3):
 
     # 使用支持向量计算测试数据分类错误概率
     print("######## calculate the error rate for test data ########")
-    testDataArr, testClassLabel = loadDataSet("testSetRBF.txt")
+    testDataArr, testClassLabel = loadDataSet("testSetRBF2.txt")
     testErrorCount = 0.0
     dataMat = mat(testDataArr)
     labelMat = mat(testClassLabel).transpose()
@@ -835,5 +835,5 @@ if __name__ == '__main__':
     #b, alphas = smoP(dataArr, classLabels, 0.6, 0.001, 40)
     #b, alphas = smoPWithK(dataArr, classLabels, 0.6, 0.001, 40, kTup=('lin', 0))
     #showClassifer(dataArr, classLabels, b, alphas, 0.6)
-    testRbf(0.8)
+    testRbf(0.7)
 
