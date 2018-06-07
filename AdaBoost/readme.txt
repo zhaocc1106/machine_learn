@@ -74,3 +74,32 @@ AdaBoostËã·¨ÊÇ»ùÓÚBoostingË¼ÏëµÄ»úÆ÷Ñ§Ï°Ëã·¨£¬AdaBoostÊÇadaptive boosting£¨×ÔÊÊÓ
 
 6¡¢¼ÆËã³öµÄ¼ÓÈ¨ºÍµÄ·ûºÅ¼´´ú±í·ÖÀà½á¹û
 
+
+
+
+·Ç¾ùºâ·ÖÀàÎÊÌâÐÔÄÜÖ¸±ê
+Ò»¸ö»ìÏý¾ØÕóÈçÏÂ:
+        T:True
+        F:False
+        P:Positive
+        N:Negative
+                          Ô¤²â½á¹û
+             ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+                     +1                  -1
+        Õæ   ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+        Êµ     +1    TP                  FN
+        ½á   ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+        ¹û     -1    FP                  TN
+             ¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª¡ª
+
+    ÕæÑôÂÊ=TP/(TP+FN)
+    ¼ÙÑôÂÊ=FP/(FP+TN)
+    ÕæÈ·ÂÊ=TP/(TP+FP)
+    ÕÙ»ØÂÊ=TP/(TP+FN)
+    »æÖÆROC(Receiver operating characteristic)ÇúÏß£¬yÖáÎªÕæÑôÂÊ£¬xÖáÎª¼ÙÑôÂÊ
+    TPÔ½´ó£¬FPÔ½Ð¡£¬Ð§¹ûÔ½ºÃ
+
+
+
+
+

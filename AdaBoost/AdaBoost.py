@@ -132,16 +132,71 @@ def classfy(dataToClass, weakClassArr):
         aggClass += weakClassArr[i]['alpha'] * predictVal
     return aggClass
 
+def plotROC(predStrengths, classLabels):
+    """
+    一个混淆矩阵如下:
+        T:True
+        F:False
+        P:Positive
+        N:Negative
+                          预测结果
+             ———————————————————————————————————————
+                     +1                  -1
+        真   ———————————————————————————————————————
+        实     +1    TP                  FN
+        结   ———————————————————————————————————————
+        果     -1    FP                  TN
+             ———————————————————————————————————————
+
+    真阳率=TP/(TP+FN)
+    假阳率=FP/(FP+TN)
+    真确率=TP/(TP+FP)
+    召回率=TP/(TP+FN)
+    绘制ROC(Receiver operating characteristic)曲线，y轴为真阳率，x轴为假阳率
+    TP越大，FP越小，效果越好
+    :param predStrengths: 预测强度序列
+    :param classLabels: 分类标签数组
+    :return:
+    """
+    cur = (1.0, 1.0)                                    # 从排名最低的样例（predStrengths）开始绘点
+    ySum = 0.0                                          # 用于计算ROC的面积
+    numPosClas = sum(array(classLabels) == 1.0)         # 计算真实分类为正的个数
+    yStep = 1 / float(numPosClas)                       # 计算y轴变化的步长
+    xStep = 1 / float(len(classLabels) - numPosClas)    # 计算x轴变化的步长
+    print("numPosClas:", str(numPosClas), " xStep:", str(xStep), " yStep:", str(yStep))
+    sortedIndicates = predStrengths.argsort()           # 获取predStrengths排序的序列，从小到大，即从(1.0, 1.0)开始绘点到(0.0, 0.0)
+    print("sortedIndicates:", sortedIndicates)
+    fig = plt.figure()
+    fig.clf()
+    ax = plt.subplot(111)
+    for index in sortedIndicates.getA()[0]:
+        if classLabels[index] == 1.0:
+            delX = 0; delY = yStep
+        else:
+            delX = xStep; delY = 0
+            ySum += cur[1]                              # 记录当前高度，用于计算面积
+        ax.plot([cur[0], cur[0] - delX], [cur[1], cur[1] - delY], c='b')    # 绘制ROC线
+        cur = (cur[0] - delX, cur[1] - delY)
+    ax.plot([0, 1], [0, 1], 'b--')                      # 使用虚线绘制对角线
+    plt.xlabel('False positive rate')                   # 标注y轴是真阳率
+    plt.ylabel('True positive rate')                    # 标注x轴是假阳率
+    plt.title('ROC curve for AdaBoost Horse Colic Detection System')
+    ax.axis([0, 1, 0, 1])                               # 设置x y轴取值范围
+    plt.show()
+    print("the Area Under the Curve is:", str(ySum * xStep))
+
+
 if __name__ == '__main__':
     dataArr, classLabel = loadDataSet('horseColicTraining2.txt')
     print("dataArr:", str(dataArr), "\nclassLable:", str(classLabel))
-    weakClassArr = adaBoostTrain(dataArr, classLabel, 100)
+    weakClassArr = adaBoostTrain(dataArr, classLabel, 10)
     print("weakClassArr:", str(weakClassArr))
 
     testDataArr, testLabel = loadDataSet('horseColicTest2.txt')
     aggClass = classfy(testDataArr, weakClassArr)
-    print("aggClass:", sign(aggClass.T))
+    print("aggClass:", aggClass.T)
     m = shape(testDataArr)[0]
     errArr = multiply(sign(aggClass) != mat(testLabel).T, ones((m, 1)))
     errRate = errArr.sum() / m
     print("test total error rate:", str(errRate))
+    plotROC(aggClass.T, testLabel)
