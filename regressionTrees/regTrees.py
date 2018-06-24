@@ -419,3 +419,5 @@ if __name__ == '__main__':
 
     # 能够测出来模型树的效果要更好，绘出模型树相关的回归线
     plotDataSetWithModel(dataSet, modelTree, 0, 1)
+
+    
