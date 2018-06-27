@@ -117,7 +117,30 @@ def showData(dataSet, centroids, clusterAssment, k):
                    marker=makers[i])  # 用特定的形状绘制出该簇所有点
     plt.show()
 
-def biKmeans1(dataSet, k, distFunc=euclDist, createCent=randCent):
+def biCreateCent(dataSet, k=2):
+    """
+    针对二分k-均值聚类算法，创建质心点的函数。随机生成质心点的话，有时候生成的质心点不好导致整个算法聚类效果不佳
+    :param dataSet: 需要二分的数据集
+    :param k: 固定为2，跟randCent保持一致
+    :return centroids: 二分后两个簇的质心点
+    """
+    dataMat = mat(dataSet)
+    m, n = shape(dataMat)
+    minDat = dataMat.min(axis=0)                                        # 数据集中最小的点
+    maxDat = dataMat.max(axis=0)                                        # 数据集中最大的点
+    meanDat = mean(dataMat, axis=0)                                     # 数据集的均值
+    centroid0 = minDat + (meanDat - minDat) * random.random()           # 在均值和最小值之间随机选取一点
+    centroid1 = meanDat + (maxDat - meanDat) * random.random()          # 在均值和最大值之间随机选取一点
+    centroids = zeros((2, n))
+    centroids[0, :] = centroid0
+    centroids[1, :] = centroid1
+    print("[biCreateCent]")
+    print("minDat:", str(minDat), " maxDat:", str(maxDat), " meanDat:", str(meanDat))
+    print("centroids:", centroids)
+    return centroids
+
+
+def biKmeans1(dataSet, k, distFunc=euclDist, createCent=biCreateCent):
     """
     二分K-均值聚类算法，能够克服K-均值算法收敛于局部最小值的问题。通过实际测试，能够发现普通的k-均值有时分类的结果并不令人满意
     :param dataSet: 数据集合
@@ -173,7 +196,7 @@ def biKmeans1(dataSet, k, distFunc=euclDist, createCent=randCent):
         # print("centroids: ", str(centroids), "\nclusterAssment:", str(clusterAssment))
     return array(centroids), clusterAssment
 
-def biKmeans2(dataSet, k, distFunc=euclDist, createCent=randCent):
+def biKmeans2(dataSet, k, distFunc=euclDist, createCent=biCreateCent):
     """
     二分K-均值聚类算法，能够克服K-均值算法收敛于局部最小值的问题，与biKmean1的区别在于比较好的划分的标准不同。
     biKmean1是通过循环2划分每个簇，划分哪个簇后导致SSE最小，就是最佳的划分。
@@ -210,6 +233,7 @@ def biKmeans2(dataSet, k, distFunc=euclDist, createCent=randCent):
         ptsInClus = dataMat[nonzero(clusterAssment[:, 0] ==
                                     bestSplitIndex)[0], :]                      # 找出该簇的所有点
         bestSplitCent, bestSplitClustAss = kMeans(ptsInClus, 2, distFunc, createCent)
+        print("bestSplitCent:", str(bestSplitCent), "\nbestSplitClustAss:", str(bestSplitClustAss))
 
         centroids[bestSplitIndex] = bestSplitCent[0, :]                         # 将被重新划分的簇的质心点进行替换
         centroids.append(bestSplitCent[1, :])                                   # 添加一个新的质心点在最后
@@ -220,6 +244,7 @@ def biKmeans2(dataSet, k, distFunc=euclDist, createCent=randCent):
         bestSplitClustAss[indexs1, 0] = len(centroids) - 1
         clusterAssment[nonzero(clusterAssment[:, 0]\
                                == bestSplitIndex)[0], :] = bestSplitClustAss    # 将被重新划分的数据点更新一下划分簇的序号
+        print("centroids:", str(centroids))
     return array(centroids), clusterAssment
 
 if __name__ == "__main__":
@@ -242,7 +267,7 @@ if __name__ == "__main__":
     dataSet = loadDataSet('testSet2.txt')
     print("dataSet:", str(dataSet))
     centroids, clusterAssment = biKmeans2(dataSet, 3)
-    print("centroids:", str(centroids), '\nclusterAssment:', str(clusterAssment))
+    # print("centroids:", str(centroids), '\nclusterAssment:', str(clusterAssment))
     showData(dataSet, centroids, clusterAssment, 3)
     # 通过测试biKmean2比biKmean1效果出错率低很多
 
