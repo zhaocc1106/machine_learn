@@ -15,6 +15,18 @@ def loadDataSet(fileName):
         dataArr.append(list(map(float, lineArr)))
     return dataArr
 
+def loadDataSet2(fileName):
+    """
+    从文件中获取需要分类的数据
+    :param fileName: 数据文件名
+    :return dataArr: 数据矩阵
+    """
+    dataArr = []
+    fr = open(fileName)
+    for line in fr.readlines():
+        lineArr = line.strip().split('\t')
+        dataArr.append(lineArr)
+    return dataArr
 
 def randCent(dataSet, k):
     """
@@ -175,7 +187,7 @@ def biKmeans1(dataSet, k, distFunc=euclDist, createCent=biCreateCent):
             print("i:", i)
             print("sseSplit:", str(sseSplit), " sseNotSplit:", str(sseNotSplit))
             print("sumSplit:", str(sseSplit + sseNotSplit))
-            if sseSplit + sseNotSplit < lowestSSE:                              # 找到能够使SSE最小的划分方案
+            if (sseSplit + sseNotSplit) < lowestSSE:                              # 找到能够使SSE最小的划分方案
                 lowestSSE = sseSplit + sseNotSplit
                 bestSplitIndex = i
                 bestSplitCent = splitCent.copy()
@@ -247,6 +259,18 @@ def biKmeans2(dataSet, k, distFunc=euclDist, createCent=biCreateCent):
         print("centroids:", str(centroids))
     return array(centroids), clusterAssment
 
+def distSLC(vecA, vecB):
+    """
+    根据地球经纬度，计算两地的距离。使用球面余弦定理来计算两个经纬度之间的距离
+    :param vecA: 地点A的经纬度信息
+    :param vecB: 地点B的经纬度信息
+    :return: 返回两地的距离
+    """
+    a = sin(vecA[0, 1]*pi/180) * sin(vecB[0, 1]*pi/180)
+    b = cos(vecA[0, 1]*pi/180) * cos(vecB[0, 1]*pi/180) * \
+        cos(pi*(vecB[0, 0]-vecA[0, 0])/180)
+    return arccos(a + b) * 6371.0
+
 if __name__ == "__main__":
 
     # 使用testSet测试普通kMeans
@@ -264,10 +288,23 @@ if __name__ == "__main__":
     # showData(dataSet, centroids, clusterAssment, 3)
 
     # 使用testSet2测试biKmeans2
+    """
     dataSet = loadDataSet('testSet2.txt')
     print("dataSet:", str(dataSet))
-    centroids, clusterAssment = biKmeans2(dataSet, 3)
-    # print("centroids:", str(centroids), '\nclusterAssment:', str(clusterAssment))
+    centroids, clusterAssment = biKmeans2(dataSet, 3, createCent=biCreateCent)
+    print("centroids:", str(centroids), '\nclusterAssment:', str(clusterAssment))
     showData(dataSet, centroids, clusterAssment, 3)
-    # 通过测试biKmean2比biKmean1效果出错率低很多
+    # 使用randCent函数创建初始质心点，通过测试biKmean2比biKmean1效果出错率低很多
+    # 使用biCreateCent函数创建初始质心点，通过测试biKmean1和biKmean2出错率均较低，biKmean2基本上不会出错
+    """
 
+    # 使用places.txt对地球上的点进行聚类
+    dataSet = loadDataSet2('places.txt')
+    m = shape(dataSet)[0]
+    dataMat = mat(zeros((m, 2)))
+    dataMat[:, 0] = mat(list(map(float, array(dataSet)[:, -2]))).T
+    dataMat[:, 1] = mat(list(map(float, array(dataSet)[:, -1]))).T
+    print("dataMat:", str(dataMat))
+    centroids, clusterAssment = biKmeans2(dataMat, 5)
+    print("centroids:", str(centroids), '\nclusterAssment:', str(clusterAssment))
+    showData(dataMat, centroids, clusterAssment, 5)
