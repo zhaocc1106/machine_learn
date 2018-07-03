@@ -5,4 +5,4 @@
 回归算法：
       regression、regressionTrees
 聚类算法：
-      kMeans
+      kMeans、Apriori、FP-growth
