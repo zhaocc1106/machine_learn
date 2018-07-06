@@ -1,22 +1,48 @@
-class treeNode:
+#
+# Copyright (c) 2014 Baidu.com, Inc. All Rights Reserved
+#
+"""
+FP-Growth树算法的实现
+
+Authors: zhaochaochao(zhaochaochao@baidu.com)
+Date:    2018/7/6 10:15
+"""
+
+class TreeNode(object):
+    """树节点类型.
+
+    FP-Growth树的节点类型
+
+    Attributes:
+        name: 节点的名字
+        count: 该节点元素在所有数据集中出现的次数
+        parent: 该节点的父节点
+        nodeLink: 用于连接相似的元素项
+        children: 该节点的子节点
+    """
+
     def __init__(self, nameValue, numOccur, parentNode):
-        self.name = nameValue               # 节点的名字
-        self.count = numOccur               # 该节点元素在所有数据集中出现的次数
-        self.parent = parentNode            # 该节点的父节点
-        self.nodeLink = None                # 用于连接相似的元素项
-        self.children = {}                  # 该节点的子节点
+        self.name = nameValue
+        self.count = numOccur
+        self.parent = parentNode
+        self.nodeLink = None
+        self.children = {}
 
     def inc(self, numOccur):
         self.count += numOccur
 
     def disp(self, ind=1):
-        """
+        """将树的数据展示出来
+
         将树的数据展示出来，并且通过空格来分层次
-        :param ind: 代表节点的层级，同事代表有几个空格在最开始
+
+        Args:
+            ind: 代表节点的层级，同事代表有几个空格在最开始
         """
         print("  " * ind, self.name, " ", self.count)
         for child in self.children.values():
-            child.disp(ind+1)               # 子节点层级加一
+            child.disp(ind + 1)               # 子节点层级加一
+
 
 def loadSimpDat():
     simpleDat = [['r', 'z', 'h', 'j', 'p'],
@@ -27,36 +53,41 @@ def loadSimpDat():
                  ['y', 'z', 'x', 'e', 'q', 's', 't', 'm']]
     return simpleDat
 
+
 def createInitSet(dataSet):
     retDict = {}
     for i in range(len(dataSet)):
         retDict[frozenset(dataSet[i])] = 1
     return retDict
 
+
 def updateHeader(nodeToLink, newNode):
-    """
-    将node添加到nodeToLink的链表最后
-    :param nodeToLink: 节点链表
-    :param newNode: 新节点
-    :return:
+    """将node添加到nodeToLink的链表最后
+
+    Args:
+        nodeToLink: 节点链表
+        newNode: 新节点
     """
     while nodeToLink.nodeLink != None:
         nodeToLink = nodeToLink.nodeLink
     nodeToLink.nodeLink = newNode
 
+
 def updateTree(orderedItems, retTree, headerTable, count):
-    """
-    将某次事务项集排序好后，添加到retTree树中去，该函数是一个递归函数，每次函数调用只添加一个元素到树中，所以树像是逐渐生长一样
-    :param orderedItems: 排好序的某次事务项集
-    :param retTree: 当前FP-Growth树
-    :param headerTable: header table，如createTree函数中解释
-    :param count: 该事务项集在整个数据集中出现的次数
-    :return:
+    """使用排序好的事务项集，更新FP树
+
+    将某次事务项集排序好后，添加到retTree树中去，该函数是一个递归函数，每次函数调用只添加一个元素到树中，所以树像是逐渐生长一样。
+
+    Args:
+        orderedItems: 排好序的某次事务项集
+        retTree: 当前FP-Growth树
+        headerTable: header table，如createTree函数中解释
+        count: 该事务项集在整个数据集中出现的次数
     """
     if orderedItems[0] in retTree.children:
         retTree.children[orderedItems[0]].inc(count)                        # 如果该元素已经存在，则增加该节点的计数
     else:
-        retTree.children[orderedItems[0]] = treeNode(\
+        retTree.children[orderedItems[0]] = TreeNode(\
             orderedItems[0], count, parentNode=retTree)                     # 如果该元素不存在，则生成新的节点添加到当前树中
         if headerTable[orderedItems[0]][1] == None:
             headerTable[orderedItems[0]][1] =\
@@ -70,15 +101,18 @@ def updateTree(orderedItems, retTree, headerTable, count):
 
 
 def createTree(dataSet, minSup=1):
-    """
+    """构建FP-Growth树
+
     根据数据集合以及最小支持度来构建FP-Growth树
-    :param dataSet: 数据集字典，形式如下：
-    {frozenset(['a', 'b', 'c']): 1, frozenset(['b', 'c', d]): 1, ...}
-    values代表每个项集出现的次数
-    :param minSup: 最小支持度，小于该最小支持度的项集应该被舍去
-    :return: retTree: FP-Growth树
-    :return: headerTable: 头指针表，header table中存放了每个元素，以及该元素在数据集合中出现的次数，并且连接该元素的在FP-Growth树
-    中的第一个该元素节点，形如：headerTable: {'r': [3, None], 'p': [2, None], 'z': [5, None], 'y': [3, None]}
+
+    Args:
+        dataSet: 数据集字典，形式如下：{frozenset(['a', 'b', 'c']): 1, frozenset(['b', 'c', d]): 1, ...}
+        minSup: 最小支持度，小于该最小支持度的项集应该被舍去
+
+    Returns:
+        retTree: FP-Growth树
+        headerTable: 头指针表，header table中存放了每个元素，以及该元素在数据集合中出现的次数，并且连接该元素的在FP-Growth树
+        中的第一个该元素节点，形如：headerTable: {'r': [3, None], 'p': [2, None], 'z': [5, None], 'y': [3, None]}
     """
     #--Begin: 第一次循环数据集合生成header table
     headerTable = {}
@@ -99,7 +133,7 @@ def createTree(dataSet, minSup=1):
     #--End: 第一次循环数据集合生成header table
 
     #--Begin: 第二次循环数据集合，构建FP-Growth树
-    retTree = treeNode('Null set', 1, None)                                 # 创建根节点
+    retTree = TreeNode('Null set', 1, None)                                 # 创建根节点
     for tranSet, count in dataSet.items():
         localD = {}
         for item in tranSet:
@@ -114,22 +148,31 @@ def createTree(dataSet, minSup=1):
 
     #--End: 第二次循环数据集合，构建FP-Growth树
 
+
 def ascendTree(leafNode, prefixPath):
-    """
+    """获取叶子节点前缀
+
     通过从叶子节点回溯树，从而获得该叶子节点的前缀
-    :param leafNode: 叶子节点
-    :param prefixPath: 保存该叶子节点的前缀
-    :return:
+
+    Args:
+       leafNode: 叶子节点
+       prefixPath: 保存该叶子节点的前缀
     """
     if leafNode.parent.name != 'Null set':
         prefixPath.append(leafNode.parent.name)
         ascendTree(leafNode.parent, prefixPath)
 
+
 def findPrefixPath(treeNode):
-    """
+    """寻找节点的前缀
+
     寻找树的某个节点所代表的元素的所有的前缀集合，即所有的路径
-    :param treeNode: 树的某个节点
-    :return paths: 节点所代表的项元素所有的路径
+
+    Args:
+        treeNode: 树的某个节点
+
+    Returns:
+        节点所代表的项元素所有的路径
     """
     paths = {}                                              # 每个路径都有该路径的计数，所有需要用字典来记录路径及他的路径计数
     while treeNode != None:
@@ -140,15 +183,18 @@ def findPrefixPath(treeNode):
         treeNode = treeNode.nodeLink                        # 通过nodeLink连接的所有该元素的节点，来获取该元素所有路径
     return paths
 
+
 def findFreqItems(inTree, headerTable, minSupport, preFix, freqItemsList):
-    """
+    """寻找频繁项集
+
     通过递归构建条件FP树，找到所有的频繁项集
-    :param inTree: 初始的FP-Growth树
-    :param headerTable: 头指针表，如createTree中的解释
-    :param minSupport: 最小支持度，用来剔除不满足最小支持度的项集
-    :param preFix: 前缀，在构建条件FP树时的前缀（条件模式基），初始为空
-    :param freqItemsList: 用于保存频繁项集的列表
-    :return:
+
+    Args:
+        inTree: 初始的FP-Growth树
+        headerTable: 头指针表，如createTree中的解释
+        minSupport: 最小支持度，用来剔除不满足最小支持度的项集
+        preFix: 前缀，在构建条件FP树时的前缀（条件模式基），初始为空
+        freqItemsList: 用于保存频繁项集的列表
     """
     headers = [v[0] for v in sorted(headerTable.items(),\
                                     key=lambda p: p[0])]            # 对headerTable进行排序
@@ -169,9 +215,10 @@ def findFreqItems(inTree, headerTable, minSupport, preFix, freqItemsList):
             findFreqItems(condTree, condHead,\
                           minSupport, newPreFix, freqItemsList)     # 当条件树的headerTable不为空的时候，需要递归在该条件树上寻找所有的频繁项集
 
+
 if __name__ == '__main__':
-    # rootNode = treeNode('a', 1, None)
-    # rootNode.children['b'] = treeNode('b', 2, None)
+    # rootNode = TreeNode('a', 1, None)
+    # rootNode.children['b'] = TreeNode('b', 2, None)
     # rootNode.disp(1)
 
     dataSet = loadSimpDat()
