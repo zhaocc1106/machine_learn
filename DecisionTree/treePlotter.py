@@ -1,14 +1,17 @@
+#
+# Copyright (c) 2014 Baidu.com, Inc. All Rights Reserved
+#
+"""
+绘制决策树
+
+Authors: zhaochaochao(zhaochaochao@baidu.com)
+Date:    2018/7/6 17:10
+"""
 import matplotlib.pyplot as plt
 
 decisionNode = dict(boxstyle="sawtooth", fc="0.8")
 leafNode = dict(boxstyle="round4", fc="0.8")
 arrowArgs = dict(arrowstyle="<-")
-
-def plotNode(nodeText, centerPt, parentPt, nodeType):
-    createPlot.axl.annotate(nodeText, xy=parentPt, \
-    xycoords='axes fraction', \
-    xytext=centerPt, textcoords='axes fraction', \
-    va='center', ha='center', bbox=nodeType, arrowprops=arrowArgs)
 
 # def createPlot():
 #     fig = plt.figure(1, facecolor="white")
@@ -18,8 +21,31 @@ def plotNode(nodeText, centerPt, parentPt, nodeType):
 #     plotNode("leaf node", (0.8, 0.1), (0.3, 0.8), leafNode)
 #     plt.show()
 
-#get the tree leafs counts
+
+def plotNode(nodeText, centerPt, parentPt, nodeType):
+    """绘制树节点
+
+    Args:
+        nodeText: 节点文字描述
+        centerPt: 节点中心坐标
+        parentPt: 父节中心坐标
+        nodeType: 节点绘制风格
+    """
+    createPlot.axl.annotate(nodeText, xy=parentPt, \
+    xycoords='axes fraction', \
+    xytext=centerPt, textcoords='axes fraction', \
+    va='center', ha='center', bbox=nodeType, arrowprops=arrowArgs)
+
+
 def getNumLeafs(myTree):
+    """获取树的叶子的个数
+
+    Args:
+        myTree: 决策树
+
+    Returns:
+        叶子个数
+    """
     numLeafs = 0
     firstStr = list(myTree.keys())[0]
     secondDict = myTree[firstStr]
@@ -30,8 +56,16 @@ def getNumLeafs(myTree):
             numLeafs += 1
     return numLeafs
 
-#get the tree depth
+
 def getTreeDepth(myTree):
+    """获取树的深度
+
+    Args:
+        myTree: 决策树
+
+    Returns:
+        决策树的深度
+    """
     maxDepth = 0
     firstStr = list(myTree.keys())[0]
     secondDict = myTree[firstStr]
@@ -45,11 +79,25 @@ def getTreeDepth(myTree):
     return maxDepth
 
 def plotMidText(cntrPt, parentPt, txtString):
+    """绘制文字描述
+
+    Args:
+        cntrPt: 节点中心坐标
+        parentPt: 父节点中心坐标
+        txtString: 文字描述
+    """
     xMid = (parentPt[0] - cntrPt[0]) / 2 + cntrPt[0];
     yMid = (parentPt[1] - cntrPt[1]) / 2 + cntrPt[1];
     createPlot.axl.text(xMid, yMid, txtString)
 
 def plotTree(myTree, parentPt, nodeText):
+    """绘制决策树
+
+    Args:
+        myTree: 决策树
+        parentPt: 树根节点坐标
+        nodeText: 树与父节点之间的文字描述，即特征值
+    """
     numLeafs = getNumLeafs(myTree)
     depth = getTreeDepth(myTree)
     firstStr = list(myTree.keys())[0]
