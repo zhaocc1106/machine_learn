@@ -7,6 +7,10 @@ FP-Growth树算法的实现
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/7/6 10:15
 """
+import datetime
+import twitter
+from time import sleep
+import re
 
 class TreeNode(object):
     """树节点类型.
@@ -42,6 +46,19 @@ class TreeNode(object):
         print("  " * ind, self.name, " ", self.count)
         for child in self.children.values():
             child.disp(ind + 1)               # 子节点层级加一
+
+def loadDataFromFile(fileName):
+    """
+    从文件中获取需要的数据
+    :param fileName: 数据文件名
+    :return dataArr: 数据
+    """
+    dataArr = []
+    file = open(fileName)
+    for line in file.readlines():
+        lineArr = line.strip().split(' ')
+        dataArr.append(lineArr)
+    return dataArr
 
 
 def loadSimpDat():
@@ -116,7 +133,10 @@ def createTree(dataSet, minSup=1):
     """
     #--Begin: 第一次循环数据集合生成header table
     headerTable = {}
+    iter = 0
     for trans in dataSet.keys():                                            # 循环计算所有元素出现的次数，并记录到headerTable中
+        iter += 1
+        print("[First iteration %d] trans:%s" % (iter, str(trans)))
         for item in trans:
             headerTable[item] = headerTable.get(item, 0) + dataSet[trans]
 
@@ -134,15 +154,19 @@ def createTree(dataSet, minSup=1):
 
     #--Begin: 第二次循环数据集合，构建FP-Growth树
     retTree = TreeNode('Null set', 1, None)                                 # 创建根节点
+    iter = 0
     for tranSet, count in dataSet.items():
+        iter += 1
+        print("[Second iteration %d] trans %s" % (iter, str(tranSet)))
         localD = {}
         for item in tranSet:
             if item in set(headerTable.keys()):
                 localD[item] = headerTable[item][0]                         # 记录当前事务集合中每个元素出现的次数，从header table中获取
+        print("[Second iteration %d] localD: %s" % (iter, str(localD)))
         if len(localD) > 0:
             orderedItems = [v[0] for v in sorted(localD.items(),\
                                  key=lambda p: p[1], reverse=True)]         # 根据每个元素出现的次数进行排序，次数越多越靠前
-            print("orderedItems:", str(orderedItems))
+            # print("orderedItems:", str(orderedItems))
             updateTree(orderedItems, retTree, headerTable, count)           # 将本次排好序的项集，构建到FP-Growth树中去
     return retTree, headerTable
 
@@ -216,11 +240,66 @@ def findFreqItems(inTree, headerTable, minSupport, preFix, freqItemsList):
                           minSupport, newPreFix, freqItemsList)     # 当条件树的headerTable不为空的时候，需要递归在该条件树上寻找所有的频繁项集
 
 
+def textParse(bigString):
+    urlsRemoved = re.sub('(http:[/][/]|www.)([a-z]|[A-Z]|[0-9]|[/.]|[~])*', '', bigString)  # 过滤掉url
+    listOfTokens = re.split(r'\W*', urlsRemoved)                                            # 过滤掉符号
+    return [tok.lower() for tok in listOfTokens if len(tok) > 2]                            # 过滤掉单字符，并小写化
+
+
+def getLotsOfTweets(searchStr):
+    """从推特中获取关键字相关的推文
+
+    Args:
+        searchStr: 关键字
+
+    Returns:
+        推文结果
+    """
+    CONSUMER_KEY = '6oAAneQjWtQXZPHWW5JA9lOw9'
+    CONSUMER_SECRET = 'eoubjNZaKvXVAnEFSfGrjXpjE1ZkkY0D96NSw6V4wu5lDdBebW'
+    ACCESS_TOKEN_KEY = '1015486145713410048-tTL7TQod2cPGClthtHhskEeLIa1kIw'
+    ACCESS_TOKEN_KEY_SECRET = 'o989shxl23FRsxT5JxEXj5se2OGrmFJYjHKR10hK1rbxo'
+    api = twitter.Api(consumer_key=CONSUMER_KEY,
+                      consumer_secret=CONSUMER_SECRET,
+                      access_token_key=ACCESS_TOKEN_KEY,
+                      access_token_secret=ACCESS_TOKEN_KEY_SECRET)
+    resultsPages = []                                                           # 保存所有页面的推文
+    for i in range(1, 15):
+        print("fetching page %d" % i)
+        searchRes = api.GetSearch(searchStr, count=15)
+        resultsPages.append(searchRes)
+        sleep(3)
+    return resultsPages
+
+
+def mineTweets(tweetArr, minSup=5):
+    """根据twitter搜索到的结果，找到频繁项集
+
+    Args:
+        tweetArr: twitter搜索到的结果
+        minSup: 最小支持度
+
+    Returns:
+        频繁项集
+    """
+    parsedList = []
+    for i in range(14):
+        for j in range(100):
+            parsedList.append(textParse(tweetArr[i][j].text))
+    initSet = createInitSet(parsedList)
+    myFPtree, myHeaderTab = createTree(initSet, minSup)
+    myFreqList = []
+    findFreqItems(myFPtree, myHeaderTab, minSup, set([]), myFreqList)
+    return myFreqList
+
+
 if __name__ == '__main__':
     # rootNode = TreeNode('a', 1, None)
     # rootNode.children['b'] = TreeNode('b', 2, None)
     # rootNode.disp(1)
 
+    """
+    # 测试简单的数据
     dataSet = loadSimpDat()
     dataDic = createInitSet(dataSet)
     print("dataDic:", str(dataDic))
@@ -234,3 +313,19 @@ if __name__ == '__main__':
     freqItems = []
     findFreqItems(fpTree, headerTable, 3, prefixPath, freqItems)
     print("freqItems:", str(freqItems))
+    """
+
+    # 测试复杂的大量数据
+    startTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    dataSet = loadDataFromFile('kosarak.dat')
+    dataDic = createInitSet(dataSet)
+    print("dataDic:", str(dataDic))
+    fpTree, headerTable = createTree(dataDic, 100000)
+    print("headerTable:", str(headerTable))
+    prefixPath = set([])
+    freqItems = []
+    findFreqItems(fpTree, headerTable, 100000, prefixPath, freqItems)
+    print("freqItems:", str(freqItems))
+    stopTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    print("startTime:", str(startTime))
+    print("stopTime:", str(stopTime))
