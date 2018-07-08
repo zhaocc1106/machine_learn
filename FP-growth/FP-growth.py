@@ -47,6 +47,7 @@ class TreeNode(object):
         for child in self.children.values():
             child.disp(ind + 1)               # 子节点层级加一
 
+
 def loadDataFromFile(fileName):
     """
     从文件中获取需要的数据
