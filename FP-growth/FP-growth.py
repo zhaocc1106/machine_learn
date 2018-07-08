@@ -114,7 +114,7 @@ def updateTree(orderedItems, retTree, headerTable, count):
                          retTree.children[orderedItems[0]])                 # 如果该元素对应的header table中的元素已经连接节点，则将节点连接到header table中的节点链表的最后
     if len(orderedItems) > 1:
         updateTree(orderedItems[1:],\
-                   headerTable[orderedItems[0]][1], headerTable, count)     # 递归生长下一个节点到当前树的子树中
+                   retTree.children[orderedItems[0]], headerTable, count)   # 递归生长下一个节点到当前树的子树中
 
 
 def createTree(dataSet, minSup=1):
@@ -134,7 +134,7 @@ def createTree(dataSet, minSup=1):
     #--Begin: 第一次循环数据集合生成header table
     headerTable = {}
     iter = 0
-    for trans in dataSet.keys():                                            # 循环计算所有元素出现的次数，并记录到headerTable中
+    for trans in dataSet:                                                   # 循环计算所有元素出现的次数，并记录到headerTable中
         iter += 1
         print("[First iteration %d] trans:%s" % (iter, str(trans)))
         for item in trans:
@@ -153,6 +153,7 @@ def createTree(dataSet, minSup=1):
     #--End: 第一次循环数据集合生成header table
 
     #--Begin: 第二次循环数据集合，构建FP-Growth树
+    freqItemSets = set(headerTable.keys())
     retTree = TreeNode('Null set', 1, None)                                 # 创建根节点
     iter = 0
     for tranSet, count in dataSet.items():
@@ -160,7 +161,7 @@ def createTree(dataSet, minSup=1):
         print("[Second iteration %d] trans %s" % (iter, str(tranSet)))
         localD = {}
         for item in tranSet:
-            if item in set(headerTable.keys()):
+            if item in freqItemSets:
                 localD[item] = headerTable[item][0]                         # 记录当前事务集合中每个元素出现的次数，从header table中获取
         print("[Second iteration %d] localD: %s" % (iter, str(localD)))
         if len(localD) > 0:
@@ -221,7 +222,7 @@ def findFreqItems(inTree, headerTable, minSupport, preFix, freqItemsList):
         freqItemsList: 用于保存频繁项集的列表
     """
     headers = [v[0] for v in sorted(headerTable.items(),\
-                                    key=lambda p: p[0])]            # 对headerTable进行排序
+                                    key=lambda p: p[1][0])]         # 对headerTable进行排序
     for header in headers:
         newPreFix = preFix.copy()
         newPreFix.add(header)
@@ -298,30 +299,29 @@ if __name__ == '__main__':
     # rootNode.children['b'] = TreeNode('b', 2, None)
     # rootNode.disp(1)
 
-    """
     # 测试简单的数据
-    dataSet = loadSimpDat()
-    dataDic = createInitSet(dataSet)
-    print("dataDic:", str(dataDic))
-    fpTree, headerTable = createTree(dataDic, 3)
-    print("fpTree:")
-    fpTree.disp()
-    print("headerTable:", str(headerTable))
-    condPattBases = findPrefixPath(headerTable['t'][1])
-    print("condPattBases:", str(condPattBases))
-    prefixPath = set([])
-    freqItems = []
-    findFreqItems(fpTree, headerTable, 3, prefixPath, freqItems)
-    print("freqItems:", str(freqItems))
-    """
+    # dataSet = loadSimpDat()
+    # dataDic = createInitSet(dataSet)
+    # print("dataDic:", str(dataDic))
+    # fpTree, headerTable = createTree(dataDic, 3)
+    # print("fpTree:")
+    # fpTree.disp()
+    # print("headerTable:", str(headerTable))
+    # condPattBases = findPrefixPath(headerTable['t'][1])
+    # print("condPattBases:", str(condPattBases))
+    # prefixPath = set([])
+    # freqItems = []
+    # findFreqItems(fpTree, headerTable, 3, prefixPath, freqItems)
+    # print("freqItems:", str(freqItems))
 
     # 测试复杂的大量数据
     startTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     dataSet = loadDataFromFile('kosarak.dat')
     dataDic = createInitSet(dataSet)
-    print("dataDic:", str(dataDic))
     fpTree, headerTable = createTree(dataDic, 100000)
     print("headerTable:", str(headerTable))
+    print("fpTree:")
+    fpTree.disp()
     prefixPath = set([])
     freqItems = []
     findFreqItems(fpTree, headerTable, 100000, prefixPath, freqItems)
@@ -329,3 +329,17 @@ if __name__ == '__main__':
     stopTime = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     print("startTime:", str(startTime))
     print("stopTime:", str(stopTime))
+
+    # dataSet = loadDataFromFile('kosarak.dat')
+    # num = 0
+    # for tran in dataSet:
+    #     has6 = False
+    #     has11 = False
+    #     for item in tran:
+    #         if item == '6':
+    #             has6 = True
+    #         if item == '1':
+    #             has11 = True
+    #     if has6 and has11:
+    #         num += 1
+    # print("num:", num)
