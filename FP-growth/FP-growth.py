@@ -257,10 +257,10 @@ def getLotsOfTweets(searchStr):
     Returns:
         推文结果
     """
-    CONSUMER_KEY = '6oAAneQjWtQXZPHWW5JA9lOw9'
-    CONSUMER_SECRET = 'eoubjNZaKvXVAnEFSfGrjXpjE1ZkkY0D96NSw6V4wu5lDdBebW'
-    ACCESS_TOKEN_KEY = '1015486145713410048-tTL7TQod2cPGClthtHhskEeLIa1kIw'
-    ACCESS_TOKEN_KEY_SECRET = 'o989shxl23FRsxT5JxEXj5se2OGrmFJYjHKR10hK1rbxo'
+    CONSUMER_KEY = '***'
+    CONSUMER_SECRET = '***'
+    ACCESS_TOKEN_KEY = '***'
+    ACCESS_TOKEN_KEY_SECRET = '***'
     api = twitter.Api(consumer_key=CONSUMER_KEY,
                       consumer_secret=CONSUMER_SECRET,
                       access_token_key=ACCESS_TOKEN_KEY,
