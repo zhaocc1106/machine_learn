@@ -9,5 +9,8 @@
 ## 聚类算法：
       kMeans、Apriori、FP-growth
 
+## 降噪工具：
+      PCA、SVD
+      
 ## 参考资料：
       机器学习实战 - Peter Harrington
