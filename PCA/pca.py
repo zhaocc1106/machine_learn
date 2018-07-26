@@ -25,6 +25,7 @@ def loadDataSet(fileName, delim = '\t'):
     dataSet = [list(map(float, line)) for line in stringArr]
     return mat(dataSet)
 
+
 def pca(dataMat, topNfeat):
     """将原始数据进行投影降维基变化
 
@@ -54,6 +55,7 @@ def pca(dataMat, topNfeat):
     print("reconMat:\n", str(reconMat))
     return projDataMat, reconMat
 
+
 def showData(dataMat, reconDataMat):
     """展示原始数据以及降维基变化后数据
 
@@ -66,6 +68,7 @@ def showData(dataMat, reconDataMat):
     ax.scatter(dataMat[:, 0].T.A[0], dataMat[:, 1].T.A[0], marker='^', s=10)
     ax.scatter(reconDataMat[:, 0].T.A[0], reconDataMat[:, 1].T.A[0], marker='o', s=10, c='red')
     plt.show()
+
 
 def replaceNanWithMean(dataMat):
     """将原始数据中nan值转换成均值
