@@ -93,7 +93,8 @@ def standRate(dataMat, userId, simMean, itemId):
         打分引擎为userID用户对itemID物品预测的打分
     """
     n = shape(dataMat)[1]
-    simTotal = 0.0; ratSimTotal = 0.0
+    simTotal = 0.0
+    ratSimTotal = 0.0
     for j in range(n):
         userRating = dataMat[userId, j]
         if userRating == 0.0:
@@ -131,7 +132,7 @@ def recommend(dataMat, user, N = 3, simMean = cosSim, ratMethod = standRate):
     Returns:
         预测出N个用户打分最高的物品ID
     """
-    unratedItems = nonzero(dataMat[user, :].A == 0)[1]          # 找出所有用户还没进行打分的物品
+    unratedItems = nonzero(dataMat[user,: ].A == 0)[1]          # 找出所有用户还没进行打分的物品
     if len(unratedItems) == 0:
         print("no unrated items")
     print("unratedItems:", str(unratedItems))
@@ -158,7 +159,8 @@ def svdRate(dataMat, userId, simMean, itemId):
         打分引擎为userID用户对itemID物品预测的打分
     """
     n = shape(dataMat)[1]
-    simTotal = 0.0; ratSimTotal = 0.0
+    simTotal = 0.0
+    ratSimTotal = 0.0
     U, Sigma, VT = linalg.svd(dataMat)
     Sig4 = mat(eye(4) * Sigma[: 4])                                 # 通过计算奇异值平方和的90%，得出4个奇异值平方和就可以满足
     # xformedItems = (dataMat.T * U[:, :4] * Sig4.I).T
@@ -166,11 +168,11 @@ def svdRate(dataMat, userId, simMean, itemId):
     # DataMat = U * Sigma * VT
     # U为左奇异矩阵，VT为右奇异矩阵，Sigma为奇异值对角矩阵
     # DataMat ≈ U[:, : R] * SigR * VT[:R, :]
-    # 左奇异矩阵U能行降维，右奇异矩阵VT能进行列降维/
+    # 左奇异矩阵U能行降维，右奇异矩阵VT能进行列降维
     # UT[: R, :] * DataMat ≈ SigR * VT[:R, :]行降维到R * N
     # DataMat * V[:, :R] ≈ U[:, : R] * SigR列降维到M * R
     """
-    xformedItems = Sig4 * VT[:4, :]                                 # UT[: R, :] * DataMat ≈ SigR * VT[:R, :]
+    xformedItems = Sig4 * VT[: 4,: ]                                # UT[: R, :] * DataMat ≈ SigR * VT[:R, :]
     # print("U:\n", str(U))
     # print("Sigma:\n", str(Sigma))
     # print("VT:\n", str(VT))

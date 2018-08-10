@@ -2,7 +2,7 @@
 # Copyright (c) 2014 Baidu.com, Inc. All Rights Reserved
 #
 """
-
+PCA降噪算法的实现和应用
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/7/17 19:42
