@@ -14,6 +14,3 @@
 
 ## 降噪工具：
       PCA、SVD
-      
-## 参考资料：
-      机器学习实战 - Peter Harrington
