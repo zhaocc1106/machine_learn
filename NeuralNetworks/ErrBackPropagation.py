@@ -1,9 +1,11 @@
+# _*_ coding:utf-8 _*_
 #
 # Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
 #
 """
 
-The BP(Error back propagation) algorithm for multi-layer feed forward neural networks.
+The Stand BP(Error back propagation) algorithm for multi-layer feed forward
+neural networks.
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/8/28 8:49
 """
@@ -40,7 +42,8 @@ def sigmoid(x):
     Args:
         x: 输入值
 
-    Returns: sigmoid计算得到的值
+    Returns:
+        sigmoid计算得到的值
     """
     return 1.0 / (1 + exp(-x))
 
@@ -68,7 +71,8 @@ def calcOutput(dataX, params, activFunc=sigmoid):
     Returns:
         dataY: 输出矩阵Y
     """
-    # print("#############################################calcOutput begin#############################################")
+    # print("#############################################calcOutput
+    # begin#############################################")
     totalLayer = len(params) + 1  # 求总层数
     m, n = shape(dataX)
 
@@ -100,14 +104,16 @@ def calcOutput(dataX, params, activFunc=sigmoid):
             # print("###############layer %d end###############" % (layer))
             break
         else:
-            layer_output_new = mat(-ones((m, mParams + 1)))  # 生成layer层的输出矩阵，多了一列-1列作为哑结点
+            layer_output_new = mat(
+                -ones((m, mParams + 1)))  # 生成layer层的输出矩阵，多了一列-1列作为哑结点
             layer_output_new[:, :-1] = layer_output
             layer_output = layer_output_new
             # print("layer_output:\n", str(layer_output))
             output.append(layer_output)
             # print("###############layer %d end###############" % (layer))
 
-    # print("#############################################calcOutput end#############################################")
+    # print("#############################################calcOutput
+    # end#############################################")
     return output
 
 
@@ -141,12 +147,14 @@ def calcGradient(realOutPut, estOutput, params):
             # print("estOutput[layer]:\n", str(estOutput[layer]))
             gLayer = multiply(estOutput[layer],
                               multiply((1 - estOutput[layer]),
-                                       (realOutPut - estOutput[layer])))  # 计算输出层对应的g值
+                                       (realOutPut - estOutput[
+                                           layer])))  # 计算输出层对应的g值
             # print("gLayer:\n", str(gLayer))
             gs.insert(0, gLayer)
 
             # print("estOutput[layer - 1]\n", str(estOutput[layer - 1]))
-            deltaParamLayer = multiply(gLayer.T, estOutput[layer - 1])  # 计算该层所有神经元所有参数的梯度
+            deltaParamLayer = multiply(gLayer.T,
+                                       estOutput[layer - 1])  # 计算该层所有神经元所有参数的梯度
             # print("deltaParamLayer:\n", str(deltaParamLayer))
             deltaParams.insert(0, deltaParamLayer)  # 存储该层神经元的参数的梯度
             # print("###############layer %d end###############" % (layer))
@@ -165,13 +173,15 @@ def calcGradient(realOutPut, estOutput, params):
         # print("estOutput[layer][:, :-1]\n", str(estOutput[layer][:, :-1]))
         temp = gLayer * params[layer][:, :-1]  # 参数最后一列是阈值列，不用于计算g值
         gLayer = multiply(estOutput[layer][:, :-1],
-                          multiply(1 - estOutput[layer][:, :-1], temp))  # 计算该层的g值
+                          multiply(1 - estOutput[layer][:, :-1],
+                                   temp))  # 计算该层的g值
         # print("gLayer:\n", str(gLayer))
         gs.append(gLayer)
         gs.insert(0, gLayer)  # 因为是倒序求的gLayer，所以在添加时添加到数组首
 
         # print("estOutput[layer - 1]\n", str(estOutput[layer - 1]))
-        deltaParamLayer = multiply(gLayer.T, estOutput[layer - 1])  # 计算该层所有神经元所有参数的梯度
+        deltaParamLayer = multiply(gLayer.T,
+                                   estOutput[layer - 1])  # 计算该层所有神经元所有参数的梯度
         # print("deltaParamLayer:\n", str(deltaParamLayer))
         deltaParams.insert(0, deltaParamLayer)  # 存储该层神经元的参数的梯度
         # print("###############layer %d end###############" % (layer))
@@ -211,21 +221,26 @@ def initParams(totalLayer, inputLayerWid, outputLayerWid, hidLayerWid):
         if layer == totalLayer - 1:
             params.append(mat(random.rand(outputLayerWid,
                                           hidLayerWid[
-                                              layer - 2] + 1)))  # 为输出层与最后一个隐藏层生成随机的连接权值, +1是为了将阈值和连接权值组合在一起，最后一列是阈值
+                                              layer - 2] + 1)))  #
+            # 为输出层与最后一个隐藏层生成随机的连接权值, +1是为了将阈值和连接权值组合在一起，最后一列是阈值
             break
 
         if layer == 1:
             params.append(mat(random.rand(hidLayerWid[layer - 1],
-                                          inputLayerWid + 1)))  # 为第一层隐藏层与输入层之间生成随机的连接权值, +1是为了将阈值和连接权值组合在一起，最后一列是阈值
+                                          inputLayerWid + 1)))  #
+            # 为第一层隐藏层与输入层之间生成随机的连接权值, +1是为了将阈值和连接权值组合在一起，最后一列是阈值
         else:
             params.append(mat(random.rand(hidLayerWid[layer - 1],
-                                          hidLayerWid[layer - 2] + 1)))  # 为非第一层隐藏层生成连接权值, +1是为了将阈值和连接权值组合在一起，最后一列是阈值
+                                          hidLayerWid[
+                                              layer - 2] + 1)))  #
+            # 为非第一层隐藏层生成连接权值, +1是为了将阈值和连接权值组合在一起，最后一列是阈值
 
     print("conWeights and threshold:", str(params))
     return params
 
 
-def standBP(dataX, dataY, numHidLayer=1, hidLayerWid=[], activFunc=sigmoid, alpha = 2, itera = 10000):
+def standBP(dataX, dataY, numHidLayer=1, hidLayerWid=[], activFunc=sigmoid,
+            alpha=2, itera=10000):
     """标准BP算法
 
     通过训练数据集合X和Y，不断训练多层前馈神经网络的参数集合直至收敛稳定下来。
@@ -258,11 +273,13 @@ def standBP(dataX, dataY, numHidLayer=1, hidLayerWid=[], activFunc=sigmoid, alph
     newDataX[:, :inputLayerWid] = dataX  # 为输入矩阵添加一个全部有-1组成的列对应阈值列，被称作哑结点
     print("newDataX:\n", str(newDataX))
 
-    output = calcOutput(newDataX[0, :], params, activFunc)  # 根据当前参数集合计算出来的每层神经元的输出
+    output = calcOutput(newDataX[0, :], params,
+                        activFunc)  # 根据当前参数集合计算出来的每层神经元的输出
     print("output:\n", str(output))
     printLayerData(output)
 
-    # deltaParams = calcGradient(dataY[0, :], output, params)  # 根据当前神经网络的输出，计算当前参数调整的梯度
+    # deltaParams = calcGradient(dataY[0, :], output, params)  #
+    # 根据当前神经网络的输出，计算当前参数调整的梯度
     # print("deltaParams:\n", str(deltaParams))
     #
     # for k in range(len(deltaParams)):
@@ -272,13 +289,17 @@ def standBP(dataX, dataY, numHidLayer=1, hidLayerWid=[], activFunc=sigmoid, alph
     alpha = alpha
     for i in range(itera):
         if i % 1000 == 0:
-            print("*******************************************%d standBP*******************************************" % i)
+            print(
+                "*******************************************%d "
+                "standBP*******************************************" % i)
         for j in range(numTrainX):  # 标准BP算法每次更新只针对单个样例，参数更新非常频繁
             # print("the training example:\n",
             #       str(newDataX[j, :-1]), str(dataY[j, :]))
-            output = calcOutput(newDataX[j, :], params, activFunc)  # 根据当前参数集合计算出来的每层神经元的输出
+            output = calcOutput(newDataX[j, :], params,
+                                activFunc)  # 根据当前参数集合计算出来的每层神经元的输出
 
-            deltaParams = calcGradient(dataY[j, :], output, params)  # 根据当前神经网络的输出，计算当前参数调整的梯度
+            deltaParams = calcGradient(dataY[j, :], output,
+                                       params)  # 根据当前神经网络的输出，计算当前参数调整的梯度
 
             if i % 1000 == 0:
                 print("output:\n", str(output))
