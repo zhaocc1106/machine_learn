@@ -2,8 +2,7 @@
 # Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
 #
 """
-The improved BP(Error back propagation) algorithm for multi-layer feed forward
-neural networks.
+The improved multi-layer feed forward neural networks.
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/9/14 14:28

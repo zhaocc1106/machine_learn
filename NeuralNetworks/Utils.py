@@ -13,7 +13,7 @@ import gzip
 import cPickle
 
 from numpy import *
-import ImprovedBP
+import ImprovedNN
 
 
 def img2Matrix(filename):
@@ -73,7 +73,7 @@ def load_mnist_data():
     training_data, validation_data, test_data = cPickle.load(f)
     f.close()
     training_inputs = [reshape(x, (784, 1)) for x in training_data[0]]
-    training_outputs = [ImprovedBP.vectorized_result(y) for y in
+    training_outputs = [ImprovedNN.vectorized_result(y) for y in
                         training_data[1]]
     training_data = zip(training_inputs, training_outputs)
     validation_inputs = [reshape(x, (784, 1)) for x in validation_data[0]]
