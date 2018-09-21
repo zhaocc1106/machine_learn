@@ -9,12 +9,12 @@ Date:    2018/9/14 14:28
 """
 # Stand library
 import json
-import random
 import sys
 
 # Third-party library
 import numpy as np
 import Utils
+import matplotlib.pyplot as plt
 
 
 ### Define the quadratic and cross-entropy cost functions
@@ -91,19 +91,30 @@ class CrossEntropyCost(object):
 #### Network main class
 class Network(object):
 
-    def __init__(self, sizes, cost=CrossEntropyCost):
+    def __init__(self, sizes, cost=CrossEntropyCost, regularization='L2',
+                 dropout=True, dropout_p=0.5):
         """The construct function of network class.
 
         Args:
             sizes: The number of neurons in the respective layers of the
-            network. For example, [5, 3, 1] represent first layer has 5 neurons
-            and second layer has 3 neurons and third layer has 1 neuron.
+            network. For example, ``[5, 3, 1]`` represent first layer has 5
+            neurons and second layer has 3 neurons and third layer has 1 neuron.
             cost: The cost function. The default func is cross entropy cost
             func.
+            regularization: The regularization method. Should be ``L1`` or
+            ``L2`` or None. Default is ``L2``.
+            dropout_p: The dropout probability. Default is ``0.5``.
         """
         self.num_layer = len(sizes)
         self.sizes = sizes
         self.cost = cost
+        if regularization != "L1" and regularization != "L2" and \
+                regularization != None:
+            raise ValueError("Regularization Should be ``L1`` or ``L2`` or "
+                             "None.")
+        self.regularization = regularization
+        self.dropout = dropout
+        self.dropout_p = dropout_p
         self.default_weights_initialize()
 
     def default_weights_initialize(self):
@@ -211,7 +222,7 @@ class Network(object):
             print("Evaluation cost:%f   Evaluation accuracy:%f" % (
                 cost, accuracy))
         return training_cost, training_accuracy, evaluation_cost, \
-               evaluation_data
+               evaluation_accuracy
 
     def update_mini_batch(self, mini_batch, eta, lmbda, n):
         """Update weights and biases by applying gradient descent using
@@ -241,8 +252,18 @@ class Network(object):
                                                         delta_nabla_b)]
             nabla_weights = [nw + dnw for nw, dnw in zip(nabla_weights,
                                                          delta_nabla_w)]
-        self.weights = [(1 - eta * (lmbda / n)) * w - (eta / len(mini_batch))
-                        * nw for w, nw in zip(self.weights, nabla_weights)]
+        if self.regularization == 'L2':
+            self.weights = [
+                (1 - eta * (lmbda / n)) * w - (eta / len(mini_batch))
+                * nw for w, nw in zip(self.weights, nabla_weights)]
+        elif self.regularization == 'L1':
+            self.weights = [
+                (w - eta * (lmbda / n) * np.sign(w)) - (eta / len(mini_batch))
+                * nw for w, nw in zip(self.weights, nabla_weights)]
+        elif self.regularization == None:
+            self.weights = [
+                w - (eta / len(mini_batch))
+                * nw for w, nw in zip(self.weights, nabla_weights)]
         self.biases = [b - (eta / len(mini_batch)) * nb
                        for b, nb in zip(self.biases, nabla_biases)]
 
@@ -266,12 +287,16 @@ class Network(object):
 
         # Calculate the output by feed forward.
         activation = x  # save the activation of previous layer.
-        activations = [x]  # save all activations of every layer.
+        if self.dropout:
+            activation, random_tensor = dropout(activation, self.dropout_p)
+        activations = [activation]  # save all activations of every layer.
         zs = []  # save all z of every layer.
         for b, w in zip(self.biases, self.weights):
             z = w * activation + b
-            zs.append(z)
             activation = sigmoid(z)
+            if self.dropout:
+                activation, random_tensor = dropout(activation, self.dropout_p)
+            zs.append(z)
             activations.append(activation)
 
         # Calculate the gradient of the output layer by backward propagation.
@@ -330,8 +355,17 @@ class Network(object):
                 y = vectorized_result(y)
             cost += self.cost.fn(a, y) / len(data)  # Add every example cost.
             break
-        cost += 0.5 * (lmbda / len(data)) * sum(
-            np.linalg.norm(w) ** 2 for w in self.weights)  # Add regularization.
+        # Add regularization.
+        if self.regularization == 'L2':
+            cost += 0.5 * (lmbda / len(data)) * sum(
+                np.linalg.norm(w) ** 2 for w in
+                self.weights)
+        elif self.regularization == 'L1':
+            cost += 0.5 * (lmbda / len(data)) * sum(
+                w.sum() for w in
+                self.weights)
+        elif self.regularization == None:
+            cost += 0.0
         return cost
 
 
@@ -394,27 +428,91 @@ def sigmoid_prime(z):
     return np.multiply(sigmoid(z), (1 - sigmoid(z)))
 
 
-if __name__ == "__main__":
-    my_net = Network([784, 100, 10])
-    # x = np.array([[0, 1, 1, 1, 0, 1, 0, 1, 0, 1]]).transpose()
-    # y = np.array([[1, 0, 0, 0, 0, 0, 0, 0, 0, 0]]).transpose()
-    # nabla_b, nabla_w = my_net.backprop(x, y)
-    # print("nabla_b:")
-    # print(nabla_b)
-    # print("nabla_w:")
-    # print(nabla_w)
+def dropout(x, level, random_tensor=None):
+    """Dropout method.
 
+    Args:
+        x: input
+        level: The dropout probability. For example 0.4 represent 4 zeros and 6
+        staying the same in 10 input data.
+        random_tensor: If not None, use the random_tensor to dropout.
+
+    Returns:
+        The out of dropout and random_tensor.
+    """
+    if level < 0. or level >= 1:  # The p should be in 0 ~ 1.0
+        raise ValueError('Dropout level must be in interval (0, 1)')
+    retain_prob = 1. - level
+
+    # For example. The x has ten elements. The level is 4. Then random_tensor
+    # may be [1, 1, 1, 1, 0, 1, 0, 1, 0, 0]. Input x will dropout 4 elements.
+    if random_tensor == None:
+        random_tensor = np.random.binomial(n=1, p=retain_prob, size=x.shape)
+    x = np.multiply(x, random_tensor)
+    x /= retain_prob  # rescale
+    return x, random_tensor
+
+
+def plot_accuracy(training_accuracy, evaluation_accuracy):
+    """Plot the accuracy change of all epochs.
+
+    Args:
+        training_accuracy: The training accuracy list.
+        evaluation_accuracy: The evaluation accuracy list.
+    """
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    x = np.arange(0, 30, 1)
+    ax.plot(x, training_accuracy)
+    ax.plot(x, evaluation_accuracy)
+    plt.xlabel("epoch")
+    plt.ylabel("accuracy")
+    plt.show()
+
+
+if __name__ == "__main__":
+    # Test network using mnist directory data.
+    my_net = Network([784, 100, 10], regularization="L2")
     training_data, validation_data, test_data = Utils.load_mnist_data()
     print("Training data size:%d" % len(training_data))
     print("Validation data size:%d" % len(validation_data))
     print("Test data size:%d" % len(test_data))
-    my_net.SGD(training_data,
-               epochs=30,
-               mini_batch_size=10,
-               eta=0.5,
-               lmbda=5.0,
-               evaluation_data=validation_data,
-               monitor_training_cost=True,
-               monitor_training_accuracy=True,
-               monitor_evaluation_cost=True,
-               monitor_evaluation_accuracy=True)
+    training_cost, training_accuracy, evaluation_cost, \
+    evaluation_accuracy = my_net.SGD(training_data,
+                                     epochs=30,
+                                     mini_batch_size=10,
+                                     eta=0.5,
+                                     lmbda=5.0,
+                                     evaluation_data=validation_data,
+                                     monitor_training_cost=True,
+                                     monitor_training_accuracy=True,
+                                     monitor_evaluation_cost=True,
+                                     monitor_evaluation_accuracy=True)
+    print("training_accuracy:")
+    print(training_accuracy)
+    print("evaluation_accuracy:")
+    print(evaluation_accuracy)
+    plot_accuracy(training_accuracy, evaluation_accuracy)
+
+    # Test network using Digits directory data.
+    # my_net = Network([1024, 200, 10], regularization=None)
+    # training_data = Utils.loadMatrixData("trainingDigits")
+    # validation_data = Utils.loadMatrixData("testDigits", isTrainingData=False)
+    # print("Training data size:%d" % len(training_data))
+    # print("Validation data size:%d" % len(validation_data))
+    # training_cost, training_accuracy, evaluation_cost, \
+    # evaluation_accuracy = my_net.SGD(training_data,
+    #                                  epochs=30,
+    #                                  mini_batch_size=10,
+    #                                  eta=0.5,
+    #                                  lmbda=5.0,
+    #                                  evaluation_data=validation_data,
+    #                                  monitor_training_cost=True,
+    #                                  monitor_training_accuracy=True,
+    #                                  monitor_evaluation_cost=True,
+    #                                  monitor_evaluation_accuracy=True)
+    # print("training_accuracy:")
+    # print(training_accuracy)
+    # print("evaluation_accuracy:")
+    # print(evaluation_accuracy)
+    # plot_accuracy(training_accuracy, evaluation_accuracy)

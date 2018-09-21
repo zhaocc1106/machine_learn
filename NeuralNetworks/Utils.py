@@ -37,11 +37,32 @@ def img2Matrix(filename):
     return mat(returnVect)
 
 
-def loadMatrixData(dirName):
+def img2Flat(filename):
+    """从数字图形文件中的数据转成一维数据矩阵
+
+    Args:
+        filename: 数字图形文件名
+
+    Returns:
+        一维数据矩阵
+    """
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+    for i in range(32):
+        lineStr = fr.readline()
+        # print(str(lineStr))
+        for j in range(32):
+            returnVect[0, i * 32 + j] = int(lineStr[j])
+    return mat(returnVect).reshape(1024, 1)
+
+
+def loadMatrixData(dirName, imgMethod=img2Flat, isTrainingData=True):
     """加载训练数据或者测试数据，构成图形矩阵
 
     Args:
         dirName: 数据对应的目录名，trainingDigits或者testDigits
+        imgMethod: 图形转换矩阵方法，img2Matrix转换成2维矩阵，img2Flat转换成1维矩阵
+        isTrainingData: 是否是训练数据，训练数据的标签需要向量化
 
     Returns:
         inputList: 训练数据图形矩阵列表
@@ -56,9 +77,10 @@ def loadMatrixData(dirName):
         fileNameStr = trainingFileList[i]
         fileStr = fileNameStr.split('.')[0]
         classNumStr = int(fileStr.split('_')[0])
-        labelList.append([classNumStr])
-        inputList.append(img2Matrix("%s/%s" % (dirName, fileNameStr)))
-    return array(inputList), array(labelList)
+        labelList.append(ImprovedNN.vectorized_result(
+            classNumStr) if isTrainingData else classNumStr)
+        inputList.append(imgMethod("%s/%s" % (dirName, fileNameStr)))
+    return zip(inputList, labelList)
 
 
 def load_mnist_data():
@@ -83,42 +105,10 @@ def load_mnist_data():
     return (training_data, validation_data, test_data)
 
 
-def dropout(x, level):
-    """dropout的实现
-
-    Args:
-        x: 输入数据
-        level: dropout的概率值，比如0.4，数据有10个，则表示4个数据被dropout
-
-    Returns:
-        dropout过的数据值
-    """
-    if level < 0. or level >= 1:  # level是概率值，必须在0~1之间
-        raise ValueError('Dropout level must be in interval [0, 1[.')
-    retain_prob = 1. - level
-
-    # 我们通过binomial函数，生成与x一样的维数向量。binomial函数就像抛硬币一样，我们可以把每个神经元当做抛硬币一样
-    # 硬币 正面的概率为p，n表示每个神经元试验的次数
-    # 因为我们每个神经元只需要抛一次就可以了所以n=1，size参数是我们有多少个硬币。
-    random_tensor = random.binomial(n=1, p=retain_prob, size=x.shape)  #
-    # 即将生成一个0、1分布的向量，0表示这个神经元被屏蔽，不工作了，也就是dropout了
-    print(random_tensor)
-
-    x *= random_tensor
-    print(x)
-    x /= retain_prob
-    print(x)
-    return x
-
-
 if __name__ == "__main__":
     # trainInputList, trainLabelList = loadData("trainingDigits")
     # print("trainInputList:\n", str(trainInputList))
     # print("trainLabelList:\n", str(trainLabelList))
-
-    # 对dropout的测试
-    # x = asarray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], dtype=float32)
-    # dropout(x, 0.4)
 
     # load_mnist_data测试
     training_data, validation_data, test_data = load_mnist_data()
