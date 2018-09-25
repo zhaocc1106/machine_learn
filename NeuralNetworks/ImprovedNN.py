@@ -85,14 +85,48 @@ class CrossEntropyCost(object):
             The error delta used to calc weights delta.
         """
         # The entropy cost function can remove the derivative of sigmoid func.
-        return a - y
+        # So it can avoid the learning rate decline.
+        return (a - y)
+
+class LogLikelihoodCost(object):
+
+    @staticmethod
+    def fn(a, y):
+        """Calc the soft max log-likelihood cost associated with an "a" and
+        desired output "y"
+
+        Args:
+            a: output
+            y: desired output
+
+        Returns:
+            The cost
+        """
+        return np.sum(-np.log(a))
+
+    @staticmethod
+    def delta(z, a, y):
+        """Calc the error delta from the output layer. The delta is used to calc
+         weights delta.
+
+        Args:
+            z: the input of of neurons.
+            a: the output of neurons.
+            y: the desired output of neurons.
+
+        Returns:
+            The error delta used to calc weights delta.
+        """
+        # The log-likelihood cost function can remove the derivative of softmax
+        # func. So it can avoid the learning rate decline.
+        return (a - y)
 
 
 #### Network main class
 class Network(object):
 
     def __init__(self, sizes, cost=CrossEntropyCost, regularization='L2',
-                 dropout=True, dropout_p=0.5):
+                 dropout=False, dropout_p=0.5):
         """The construct function of network class.
 
         Args:
@@ -150,7 +184,10 @@ class Network(object):
             a = sigmoid(w * a + b)
         return a
 
-    def SGD(self, training_data, epochs, mini_batch_size, eta, lmbda=0.0,
+    def SGD(self, training_data, epochs, mini_batch_size, eta,
+            eta_dynamic = False,
+            eta_delta = 2,
+            lmbda=0.0,
             evaluation_data=None,
             monitor_evaluation_cost=False,
             monitor_evaluation_accuracy=False,
@@ -165,6 +202,8 @@ class Network(object):
             epochs: The train epochs.
             mini_batch_size: The batch size of every epoch.
             eta: The learning rate.
+            eta_dynamic: Decide if eta is dynamic.
+            eta_delta: The delta of eta change.
             lmbda: The regularization parameter ``lambda``
             evaluation_data: The validation or test data.
             monitor_evaluation_cost: If show evaluation cost in every epoch.
@@ -186,6 +225,7 @@ class Network(object):
         evaluation_accuracy = []
         training_cost = []
         training_accuracy = []
+        eta_change_num = 0
 
         for i in range(epochs):
             # Shuffle the training_data to get random mini_batches.
@@ -221,6 +261,18 @@ class Network(object):
                 evaluation_accuracy.append(accuracy)
             print("Evaluation cost:%f   Evaluation accuracy:%f" % (
                 cost, accuracy))
+
+            # If eta is dynamic.
+            # If accuracy is not promoted in 10 epochs, reduce the learning
+            # rate eta. Eta will be reduced up to 10 times.
+            if eta_dynamic and (i + 1) % 10 == 0:
+                if evaluation_accuracy[i] <= evaluation_accuracy[i - 10]:
+                    eta = eta / eta_delta
+                    print("Now eta change to %f" % eta)
+                    eta_change_num += 1
+                    if eta_change_num == 10:
+                        return training_cost, training_accuracy, \
+                               evaluation_cost, evaluation_accuracy
         return training_cost, training_accuracy, evaluation_cost, \
                evaluation_accuracy
 
@@ -252,6 +304,7 @@ class Network(object):
                                                         delta_nabla_b)]
             nabla_weights = [nw + dnw for nw, dnw in zip(nabla_weights,
                                                          delta_nabla_w)]
+
         if self.regularization == 'L2':
             self.weights = [
                 (1 - eta * (lmbda / n)) * w - (eta / len(mini_batch))
@@ -306,7 +359,10 @@ class Network(object):
 
         for l in range(2, self.num_layer):
             z = zs[-l]
-            sp = sigmoid_prime(z)
+            if self.cost == LogLikelihoodCost:
+                sp = softmax_prime(z)
+            else:
+                sp = sigmoid_prime(z)
             delta = np.multiply(self.weights[-l + 1].transpose() * delta, sp)
             nabla_b[-l] = delta
             nabla_w[-l] = delta * activations[-l - 1].transpose()
@@ -416,6 +472,17 @@ def sigmoid(z):
     return 1.0 / (1 + np.exp(-z))
 
 
+def softmax_prime(z):
+    """The derivative function of softmax func.
+
+    Args:
+        z: input
+
+    Returns:
+        The output of sigmoid derivative func.
+    """
+    return np.multiply(sigmoid(z), (1 - sigmoid(z)))
+
 def sigmoid_prime(z):
     """The derivative function of sigmoid func.
 
@@ -462,7 +529,7 @@ def plot_accuracy(training_accuracy, evaluation_accuracy):
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    x = np.arange(0, 30, 1)
+    x = np.arange(0, len(training_accuracy), 1)
     ax.plot(x, training_accuracy)
     ax.plot(x, evaluation_accuracy)
     plt.xlabel("epoch")
@@ -472,16 +539,19 @@ def plot_accuracy(training_accuracy, evaluation_accuracy):
 
 if __name__ == "__main__":
     # Test network using mnist directory data.
-    my_net = Network([784, 100, 10], regularization="L2")
+    my_net = Network([784, 100, 10], cost=LogLikelihoodCost,
+                     regularization="L2")
     training_data, validation_data, test_data = Utils.load_mnist_data()
     print("Training data size:%d" % len(training_data))
     print("Validation data size:%d" % len(validation_data))
     print("Test data size:%d" % len(test_data))
     training_cost, training_accuracy, evaluation_cost, \
     evaluation_accuracy = my_net.SGD(training_data,
-                                     epochs=30,
+                                     epochs=100,
                                      mini_batch_size=10,
                                      eta=0.5,
+                                     eta_dynamic=True,
+                                     eta_delta=2,
                                      lmbda=5.0,
                                      evaluation_data=validation_data,
                                      monitor_training_cost=True,
@@ -502,9 +572,11 @@ if __name__ == "__main__":
     # print("Validation data size:%d" % len(validation_data))
     # training_cost, training_accuracy, evaluation_cost, \
     # evaluation_accuracy = my_net.SGD(training_data,
-    #                                  epochs=30,
+    #                                  epochs=100,
     #                                  mini_batch_size=10,
     #                                  eta=0.5,
+    #                                  eta_dynamic=True,
+    #                                  eta_delta=2,
     #                                  lmbda=5.0,
     #                                  evaluation_data=validation_data,
     #                                  monitor_training_cost=True,
