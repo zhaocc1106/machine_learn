@@ -13,7 +13,7 @@ import gzip
 import cPickle
 
 from numpy import *
-import ImprovedNN
+import ImprovedFullConnectedNN
 
 
 def img2Matrix(filename):
@@ -77,7 +77,7 @@ def loadMatrixData(dirName, imgMethod=img2Flat, isTrainingData=True):
         fileNameStr = trainingFileList[i]
         fileStr = fileNameStr.split('.')[0]
         classNumStr = int(fileStr.split('_')[0])
-        labelList.append(ImprovedNN.vectorized_result(
+        labelList.append(ImprovedFullConnectedNN.vectorized_result(
             classNumStr) if isTrainingData else classNumStr)
         inputList.append(imgMethod("%s/%s" % (dirName, fileNameStr)))
     return zip(inputList, labelList)
@@ -95,7 +95,7 @@ def load_mnist_data():
     training_data, validation_data, test_data = cPickle.load(f)
     f.close()
     training_inputs = [reshape(x, (784, 1)) for x in training_data[0]]
-    training_outputs = [ImprovedNN.vectorized_result(y) for y in
+    training_outputs = [ImprovedFullConnectedNN.vectorized_result(y) for y in
                         training_data[1]]
     training_data = zip(training_inputs, training_outputs)
     validation_inputs = [reshape(x, (784, 1)) for x in validation_data[0]]

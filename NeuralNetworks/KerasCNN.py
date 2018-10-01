@@ -3,13 +3,12 @@
 # Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
 #
 """
-The Convolution Neural Networks Algorithm.
+The use of keras CNN.
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/9/5 19:03
 """
 from numpy import *
-import Utils
 import keras
 from keras.datasets import mnist
 from keras.layers import Dense, Flatten

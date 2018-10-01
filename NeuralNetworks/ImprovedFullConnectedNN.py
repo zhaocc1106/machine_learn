@@ -182,6 +182,7 @@ class Network(object):
         """
         for w, b in zip(self.weights, self.biases):
             a = sigmoid(w * a + b)
+
         return a
 
     def SGD(self, training_data, epochs, mini_batch_size, eta,
@@ -359,10 +360,7 @@ class Network(object):
 
         for l in range(2, self.num_layer):
             z = zs[-l]
-            if self.cost == LogLikelihoodCost:
-                sp = softmax_prime(z)
-            else:
-                sp = sigmoid_prime(z)
+            sp = sigmoid_prime(z)
             delta = np.multiply(self.weights[-l + 1].transpose() * delta, sp)
             nabla_b[-l] = delta
             nabla_w[-l] = delta * activations[-l - 1].transpose()
@@ -472,17 +470,6 @@ def sigmoid(z):
     return 1.0 / (1 + np.exp(-z))
 
 
-def softmax_prime(z):
-    """The derivative function of softmax func.
-
-    Args:
-        z: input
-
-    Returns:
-        The output of sigmoid derivative func.
-    """
-    return np.multiply(sigmoid(z), (1 - sigmoid(z)))
-
 def sigmoid_prime(z):
     """The derivative function of sigmoid func.
 
@@ -493,6 +480,30 @@ def sigmoid_prime(z):
         The output of sigmoid derivative func.
     """
     return np.multiply(sigmoid(z), (1 - sigmoid(z)))
+
+
+def softmax(z):
+    """softmax function
+
+    Args:
+        z: input
+
+    Returns:
+        softmax output
+    """
+    return np.exp(z) / np.exp(z).sum()
+
+
+def softmax_prime(z):
+    """The derivative function of softmax func.
+
+    Args:
+        z: input
+
+    Returns:
+        The output of sigmoid derivative func.
+    """
+    return np.multiply(softmax(z), (1 - softmax(z)))
 
 
 def dropout(x, level, random_tensor=None):
@@ -539,7 +550,7 @@ def plot_accuracy(training_accuracy, evaluation_accuracy):
 
 if __name__ == "__main__":
     # Test network using mnist directory data.
-    my_net = Network([784, 100, 10], cost=LogLikelihoodCost,
+    my_net = Network([784, 100, 10], cost=CrossEntropyCost,
                      regularization="L2")
     training_data, validation_data, test_data = Utils.load_mnist_data()
     print("Training data size:%d" % len(training_data))
@@ -547,7 +558,7 @@ if __name__ == "__main__":
     print("Test data size:%d" % len(test_data))
     training_cost, training_accuracy, evaluation_cost, \
     evaluation_accuracy = my_net.SGD(training_data,
-                                     epochs=100,
+                                     epochs=30,
                                      mini_batch_size=10,
                                      eta=0.5,
                                      eta_dynamic=True,
