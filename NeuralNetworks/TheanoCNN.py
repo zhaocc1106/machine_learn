@@ -2,7 +2,7 @@
 # Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
 #
 """
-The Convolution Neural Networks Algorithm.
+The Convolution Neural Networks Algorithm realized by theano.
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/9/29 19:48
