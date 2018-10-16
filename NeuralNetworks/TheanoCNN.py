@@ -7,13 +7,13 @@ The Convolution Neural Networks Algorithm realized by theano.
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/9/29 19:48
 """
-import cPickle
 # The common library
 import gzip
+import cPickle
 
+# Third-party library
 import matplotlib.pyplot as plt
 import numpy as np
-# Third-party library
 import theano
 import theano.tensor as T
 from theano.tensor import shared_randomstreams
