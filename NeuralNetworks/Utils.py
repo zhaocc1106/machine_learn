@@ -57,7 +57,7 @@ def img2Flat(filename):
 
 
 def loadMatrixData(dirName, imgMethod=img2Flat, isTrainingData=True):
-    """加载训练数据或者测试数据，构成图形矩阵
+    """加载训练数据或者测试数据
 
     Args:
         dirName: 数据对应的目录名，trainingDigits或者testDigits
