@@ -488,11 +488,12 @@ def plot_accuracy(training_accuracy, evaluation_accuracy, best_test_accuracy):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     x = np.arange(0, len(training_accuracy), 1)
-    ax.plot(x, training_accuracy, label="train accuracy")
-    ax.plot(x, evaluation_accuracy, label="validation accuracy")
+    ax.plot(x, training_accuracy, label='train accuracy')
+    ax.plot(x, evaluation_accuracy, label='validation accuracy')
     plt.xlabel("epoch")
     plt.ylabel("accuracy")
     plt.title("The best test accuracy:{0:.2%}".format(best_test_accuracy))
+    plt.legend()
     plt.show()
 
 
