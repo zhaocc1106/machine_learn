@@ -37,6 +37,18 @@ else:
           "network3.py to set\nthe GPU flag to True."
 
 
+def ReLu(z):
+    """The ReLu function
+
+    Args:
+        z: The input of activation function.
+
+    Returns:
+        The activation.
+    """
+    return T.maximum(0.0, z)
+
+
 def load_mnist_data_shared():
     """Load mnist data and covert to theano.tensor.sharedvar data.
 
@@ -234,14 +246,14 @@ class Network(object):
             "1}".format(
                 best_validation_accuracy, best_iteration))
         print("Corresponding test accuracy is {0:.2%}".format(test_accuracy))
-        return train_accuracys, validation_accuracys
+        return train_accuracys, validation_accuracys, best_validation_accuracy
 
 
 # The combination of convolution with max-pooling layer.
 class ConvPoolLayer(object):
 
     def __init__(self, image_shape, filter_shape, pool_size=(2, 2),
-                 activation_function=sigmoid):
+                 activation_func=sigmoid):
         """The construct function of convolution and max-pooling layer.
 
         Args:
@@ -254,12 +266,12 @@ class ConvPoolLayer(object):
             input feature maps, the filter height and the filter width.
             pool_size: The max-pooling size. It is a tuple of length 2,
             whose entries are x and y.
-            activation_function: The activation function. Default is sigmoid.
+            activation_func: The activation function. Default is sigmoid.
         """
         self.image_shape = image_shape
         self.filter_shape = filter_shape
         self.pool_size = pool_size
-        self.activation_func = activation_function
+        self.activation_func = activation_func
         # initialize the weights and biases.
 
         # calc the output length of conv and max-pooling layer.
@@ -270,7 +282,7 @@ class ConvPoolLayer(object):
         print("ConvPoolLayer n_out:%d" % n_out)
         self.w = theano.shared(
             np.asarray(
-                np.random.normal(loc=0, scale=np.sqrt(1 / n_out),
+                np.random.normal(loc=0.0, scale=np.sqrt(1.0 / n_out),
                                  size=filter_shape),
                 dtype=theano.config.floatX),
             name='w', borrow=True)
@@ -278,7 +290,7 @@ class ConvPoolLayer(object):
         print(self.w.get_value().shape)
         self.b = theano.shared(
             np.asarray(
-                np.random.normal(loc=0, scale=1.0, size=(filter_shape[0],)),
+                np.random.normal(loc=0.0, scale=1.0, size=(filter_shape[0],)),
                 dtype=theano.config.floatX),
             name='b', borrow=True)
         print("ConvPoolLayer b.shape:")
@@ -313,54 +325,61 @@ class ConvPoolLayer(object):
 # The full connected layer.
 class FullConnectedLayer(object):
 
-    def __init__(self, n_in, n_out, activation=sigmoid, p_dropout=0.0):
+    def __init__(self, n_in, n_out, activation_func=sigmoid, p_dropout=0.0):
         """The constructor function of full-connected layer.
 
         Args:
             n_in: The number of input neuron.
             n_out: The number of output neuron.
-            activation: The activation function.
+            activation_func: The activation function.
             p_dropout: The probability of dropout.
         """
         self.n_in = n_in
         self.n_out = n_out
-        self.activation_func = activation
+        self.activation_func = activation_func
         self.p_dropout = p_dropout
 
         # Initialize the weights and biases
         self.w = theano.shared(
-            np.asarray(np.random.normal(loc=0, scale=np.sqrt(1 / n_out),
-                                        size=(n_in, n_out)),
-                       dtype=theano.config.floatX),
-            name='w', borrow=True
-        )
+            np.asarray(
+                np.random.normal(
+                    loc=0.0, scale=np.sqrt(1.0 / n_out), size=(n_in, n_out)),
+                    dtype=theano.config.floatX),
+            name='w', borrow=True)
         print("Full-connected layer w.shape:")
         print(self.w.get_value().shape)
         self.b = theano.shared(
-            np.asarray(np.random.normal(loc=0, scale=1.0, size=(n_out,)),
+            np.asarray(np.random.normal(loc=0.0, scale=1.0, size=(n_out,)),
                        dtype=theano.config.floatX),
-            name='b', borrow=True
-        )
+            name='b', borrow=True)
         print("Full-connected layer b.shape:")
         print(self.b.get_value().shape)
         self.params = [self.w, self.b]
 
-    def set_inpt(self, input, input_dropout, mini_batch_size):
+
+    def set_inpt(self, inpt, inpt_dropout, mini_batch_size):
         """Construct the graph to compute the layer output.
 
         Args:
-            input: The input var.
-            input_dropout: The dropouted input var.
+            inpt: The input var.
+            inpt_dropout: The dropouted input var.
             mini_batch_size: The mini batch size.
         """
-        self.inpt = input.reshape((mini_batch_size, self.n_in))
+        self.inpt = inpt.reshape((mini_batch_size, self.n_in))
         self.output = self.activation_func(T.dot(self.inpt, self.w) + self.b)
 
-        self.inpt_dropout = dropout_layer(input.reshape((mini_batch_size,
+        self.inpt_dropout = dropout_layer(inpt_dropout.reshape((mini_batch_size,
                                                          self.n_in)),
                                           p_dropout=self.p_dropout)
-        self.output_dropout = self.activation_func(T.dot(self.inpt,
+        self.output_dropout = self.activation_func(T.dot(self.inpt_dropout,
                                                          self.w) + self.b)
+
+        # self.inpt = inpt.reshape((mini_batch_size, self.n_in))
+        # self.output = self.activation_func(T.dot(self.inpt, self.w) + self.b)
+        # self.inpt_dropout = dropout_layer(
+        #     inpt_dropout.reshape((mini_batch_size, self.n_in)), self.p_dropout)
+        # self.output_dropout = self.activation_func(
+        #     T.dot(self.inpt_dropout, self.w) + self.b)
 
 
 # Define the softmax layer
@@ -458,21 +477,22 @@ def dropout_layer(layer, p_dropout):
     return layer * T.cast(mask, theano.config.floatX) / (1 - p_dropout)
 
 
-def plot_accuracy(training_accuracy, evaluation_accuracy):
+def plot_accuracy(training_accuracy, evaluation_accuracy, best_test_accuracy):
     """Plot the accuracy change of all epochs.
 
     Args:
         training_accuracy: The training accuracy list.
         evaluation_accuracy: The evaluation accuracy list.
+        best_test_accuracy: The best test accuracy.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
     x = np.arange(0, len(training_accuracy), 1)
-    ax.plot(x, training_accuracy)
-    ax.plot(x, evaluation_accuracy)
+    ax.plot(x, training_accuracy, label="train accuracy")
+    ax.plot(x, evaluation_accuracy, label="validation accuracy")
     plt.xlabel("epoch")
     plt.ylabel("accuracy")
-    plt.title("The accuracy of every epoch.")
+    plt.title("The best test accuracy:{0:.2%}".format(best_test_accuracy))
     plt.show()
 
 
@@ -495,15 +515,20 @@ if __name__ == "__main__":
     print(test_data[0].get_value().shape)
     mini_batch_size = 10
     network = Network([ConvPoolLayer(image_shape=(mini_batch_size, 1, 28, 28),
-                                     filter_shape=(20, 1, 5, 5)),
-                       FullConnectedLayer(n_in=(20 * 12 * 12), n_out=100,
-                                          p_dropout=0.5),
+                                     filter_shape=(20, 1, 5, 5),
+                                     activation_func=ReLu),
+                       ConvPoolLayer(image_shape=(mini_batch_size, 20, 12, 12),
+                                     filter_shape=(40, 20, 5, 5),
+                                     activation_func=ReLu),
+                       FullConnectedLayer(n_in=(40 * 4 * 4), n_out=100,
+                                          p_dropout=0.5, activation_func=ReLu),
                        SoftmaxLayer(n_in=100, n_out=10, p_dropout=0.5)],
                       mini_batch_size=mini_batch_size)
-    # network = Network([FullConnectedLayer(n_in=784, n_out=100),
-    #                    SoftmaxLayer(n_in=100, n_out=10)],
+    # network = Network([FullConnectedLayer(n_in=784, n_out=100,
+    #                                       activation_func=ReLu, p_dropout=0.5),
+    #                    SoftmaxLayer(n_in=100, n_out=10, p_dropout=0.5)],
     #                   mini_batch_size=mini_batch_size)
-    train_accuracys, validation_accuracys = \
+    train_accuracys, validation_accuracys, best_test_accuracy = \
         network.SGD(
             training_data=training_data,
             epochs=60,
@@ -512,4 +537,4 @@ if __name__ == "__main__":
             validation_data=validation_data,
             test_data=test_data,
             lmbda=5.0)
-    plot_accuracy(train_accuracys, validation_accuracys)
+    plot_accuracy(train_accuracys, validation_accuracys, best_test_accuracy)
