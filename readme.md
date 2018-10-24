@@ -10,7 +10,7 @@
       kMeans、Apriori、FP-growth
       
 ## 深度学习
-      NeuralNetworks
+      NeuralNetworks、tensorflow
 
 ## 降噪工具：
       PCA、SVD
