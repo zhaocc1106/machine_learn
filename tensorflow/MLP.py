@@ -204,7 +204,7 @@ if __name__ == "__main__":
     print(test_data.labels.shape)
 
     sess = tf.InteractiveSession()  # register default session.
-    network = Network(sizes=[784, 300, 10], drop_keep_p=1.0, mini_batch=10)
+    network = Network(sizes=[784, 300, 10], drop_keep_p=0.5, mini_batch=10)
     training_accuracys, validation_accuracys, test_accuracy = network.SGD(
         training_data=training_data,
         eta=0.01,
