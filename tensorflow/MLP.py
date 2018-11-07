@@ -7,6 +7,8 @@ The simple multi layer perceptron algorithm.
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/10/28 16:40
 """
+# System lib
+import time
 
 # 3rd-part lib
 import tensorflow as tf
@@ -119,6 +121,7 @@ class Network(object):
         validation_accuracys = []
         for epoch in range(epoches):
             print("epoch {0} begin##########################".format(epoch))
+            start_time = time.time()
             for i in range(num_train_mini_batches):
                 batch_xs, batch_ys = training_data.next_batch(self.mini_batch)
                 train_step.run({self.x: batch_xs,
@@ -141,8 +144,10 @@ class Network(object):
                                                      1.0})
             training_accuracys.append(training_accuracy)
             validation_accuracys.append(validation_accuracy)
-            print("Epoch {0}, training_accuracy: {1:.2%}, "
-                  "validation_accuracy: {2:.2%}".format(epoch,
+            time_cost = time.time() - start_time
+            print("Epoch {0} use {1:.5} s, training_accuracy: {2:.2%}, "
+                  "validation_accuracy: {3:.2%}".format(epoch,
+                                                        time_cost,
                                                         training_accuracy,
                                                         validation_accuracy))
             if validation_accuracy > best_validation_accuracy:
