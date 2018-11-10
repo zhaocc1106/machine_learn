@@ -7,12 +7,13 @@ A CNN instance to classify CIFAR-10.
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/10/31 19:39
 """
+
 # System lib.
 import math
 
-# 3rd lib.
-import cifar10
-import cifar10_input
+# 3rd part libs.
+import cifar10_module.cifar10 as cifar10
+import cifar10_module.cifar10_input as cifar10_input
 import tensorflow as tf
 import numpy as np
 import time
@@ -22,10 +23,13 @@ data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
 
 
 def load_cifar10_datas(batch_size):
-    """
+    """Load cifar-10 datas with mini batch size.
 
-    :param batch_size:
-    :return:
+    Args:
+        batch_size: The mini batch size.
+
+    Returns:
+        The data with mini batch size.
     """
     cifar10.maybe_download_and_extract()
     # Return train data has been augmented.
@@ -44,7 +48,8 @@ class Network(object):
     def __init__(self, mini_batch):
         """The construct function of network.
 
-        :param mini_batch: The mini batch.
+        Args:
+            mini_batch: The mini batch.
         """
         self.mini_batch = mini_batch
         self.eta = tf.placeholder(dtype=tf.float32)
@@ -163,10 +168,12 @@ class Network(object):
     def SGD(self, eta=1e-3, steps=3000, test_sample_size=1000):
         """Train the network using mini-batch stochastic gradient descent.
 
-        :param eta: The learning rate.
-        :param steps: The training steps.
-        :param test_sample_size: The size of sample to test.
-        :return:
+        Args:
+            eta: The learning rate.
+            steps: The training steps.
+            test_sample_size: The size of sample to test.
+
+        Returns:
             training_accuracy: The list containing training accuracy in every
            epoch.
             evaluation_accuracy: The list containing evaluation accuracy in
@@ -220,10 +227,13 @@ class Network(object):
     def __calc_loss(self, logits, labels):
         """Define the loss by logits and desired labels.
 
-        :param logits: The logits output of CNN. Original, unscaled, can be
+        Args:
+            logits: The logits output of CNN. Original, unscaled, can be
         regarded as an unnormalized log probability.
-        :param labels: The desired labels.
-        :return: The loss of the CNN.
+            labels: The desired labels.
+
+        Returns:
+            The loss of the CNN.
         """
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=labels, name="cross_entropy_per_example")
@@ -236,11 +246,14 @@ class Network(object):
     def __init_weights_with_loss(self, shape, stddev, wl, normal_func="L2"):
         """Initialize the weights with loss of normalization.
 
-        :param shape: The weights shape.
-        :param stddev: The standard deviation.
-        :param wl: The normalization params.
-        :param normal_func: The normalization function. It can be "L1" or "L2".
-        :return: The weights initialized with loss of normalization.
+        Args:
+            shape: The weights shape.
+            stddev: The standard deviation.
+            wl: The normalization function. It can be "L1" or "L2".
+            normal_func:
+
+        Returns:
+            The weights initialized with loss of normalization.
         """
         # Use gaussian distribution to initialize the weights.
         weights = tf.Variable(tf.truncated_normal(shape, stddev=stddev))
