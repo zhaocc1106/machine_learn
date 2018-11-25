@@ -1,2 +1,2 @@
-*.jpg
+image_net_origin_files/*/*.jpg
 *.tfRecords
