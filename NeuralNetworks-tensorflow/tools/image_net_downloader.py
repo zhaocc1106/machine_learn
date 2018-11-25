@@ -11,8 +11,9 @@ import urllib.request as req
 import os
 import threading
 import math
+import shutil
 
-image_data_dir = "../image_net_data/"
+image_data_dir = "../image_net_origin_files/"
 
 
 def download_images(urls_path, save_path, label, n_thread):
@@ -71,13 +72,15 @@ def download_all(urls_dir_path, n_thread):
         n_thread: The quantity of threads used to download.
     """
     filesList = os.listdir(urls_dir_path)
+    print(filesList)
     for file in filesList:
+        if os.path.isdir(image_data_dir + file):
+            continue
         file_name = file.split(".")[0]
-        print(file_name)
         if not os.path.exists(image_data_dir + file_name):
             os.makedirs(image_data_dir + file_name)
         else:
-            os.remove(image_data_dir + file_name)
+            shutil.rmtree(image_data_dir + file_name)
         download_images(urls_path=urls_dir_path + file,
                         save_path=image_data_dir + file_name + "/",
                         label=file_name,
@@ -85,4 +88,4 @@ def download_all(urls_dir_path, n_thread):
 
 
 if __name__ == "__main__":
-    download_all(image_data_dir, 32) # Use 32 treads to accelerate the download.
+    download_all(image_data_dir, 64) # Use 64 treads to accelerate the download.

@@ -16,10 +16,9 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import cifar10_module.cifar10 as cifar10
-import cifar10_module.cifar10_input as cifar10_input
+import tools.img_net_tf_records_reader as img_net_reader
 
-data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
+tf_records_dir = "../image_net_records_files/"
 
 
 def load_random_image_net_datas(batch_size):
@@ -31,12 +30,27 @@ def load_random_image_net_datas(batch_size):
     Returns:
         The data with mini batch size.
     """
-    cifar10.maybe_download_and_extract()
     images_train = np.random.normal(size=[batch_size, 224, 224, 3])
     images_test = np.random.normal(size=[batch_size, 224, 224, 3])
     labels_train = np.random.randint(1, 10, batch_size)
     labels_test = np.random.randint(1, 10, batch_size)
     return images_train, labels_train, images_test, labels_test
+
+
+def load_image_net_datas(batch_size):
+    """Load image net data from image net input.
+
+    Args:
+        batch_size: The mini batch size.
+
+    Returns:
+        Training and test mini batch datas.
+    """
+    image_train, label_train = img_net_reader.load_distorted_inputs(tf_records_dir,
+                                                                    batch_size)
+    image_test, label_test = img_net_reader.load_inputs(True, tf_records_dir,
+                                                        batch_size)
+    return image_train, label_train, image_test, label_test
 
 
 def describe_tensor(t):
@@ -320,18 +334,24 @@ class Network(object):
         sess = tf.InteractiveSession()
         tf.global_variables_initializer().run()
 
+        images_train, labels_train, images_test, labels_test = \
+            load_image_net_datas(self.mini_batch)
+        tf.train.start_queue_runners()
+
         test_iter = int(math.ceil(test_sample_size / self.mini_batch))
         train_accuracys = []
         test_accuracys = []
         for step in range(steps):
             start_time = time.time()
-            images_train, labels_train, images_test, labels_test = \
-                load_random_image_net_datas(self.mini_batch)
+            images_train_data, labels_train_data, images_test_data, \
+            labels_test_data = sess.run([
+                images_train, labels_train,
+                images_test, labels_test])
             train_op, train_loss, train_top_k = \
                 sess.run([self.train_op, self.loss, self.top_k_op],
                          feed_dict={self.eta: eta,
-                                    self.images: images_train,
-                                    self.labels_: labels_train})
+                                    self.images: images_train_data,
+                                    self.labels_: labels_train_data})
             train_accuracy = np.sum(train_top_k) / self.mini_batch
             train_accuracys.append(train_accuracy)
 
@@ -341,17 +361,18 @@ class Network(object):
                     sess.run([self.top_k_op],
                              feed_dict=
                              {self.eta: eta,
-                              self.images: images_test,
-                              self.labels_: labels_test})) / self.mini_batch
+                              self.images: images_test_data,
+                              self.labels_: labels_test_data})) / \
+                                self.mini_batch
 
             test_accuracy = test_accuracy / test_iter
             test_accuracys.append(test_accuracy)
             time_cost = time.time() - start_time
             if step % 10 == 0:
                 print("Step({0}) end with {1}s".format(step, time_cost))
-                print(
-                    "train_loss:{0:.5}, train_accuracy:{1:.2%}, validation_accuracy:{"
-                    "2:.2%}".format(train_loss, train_accuracy, test_accuracy))
+            print(
+                "train_loss:{0:.5}, train_accuracy:{1:.2%}, validation_accuracy:{"
+                "2:.2%}".format(train_loss, train_accuracy, test_accuracy))
         return train_accuracys, test_accuracys
 
 
@@ -379,5 +400,5 @@ if __name__ == "__main__":
     network = Network(10)
     training_accuracys, validation_accuracys = \
         network.SGD(eta=1e-3,
-                    steps=3000)
+                    steps=500)
     plot_accuracy(training_accuracys, validation_accuracys)
