@@ -140,7 +140,7 @@ def load_distorted_inputs(data_dir, batch_size):
         distorted_image = tf.image.random_contrast(distorted_image,
                                                    lower=0.2, upper=1.8)
 
-        # Subtract off the mean and divide by the variance of the pixels.
+        # Subtract off the mean and divide by the stddev of the pixels.
         float_image = tf.image.per_image_standardization(distorted_image)
 
         # Set the shapes of tensors.
@@ -153,7 +153,7 @@ def load_distorted_inputs(data_dir, batch_size):
     img_data_batch, img_label_batch = \
         tf.train.shuffle_batch([float_image, img_label],
                                batch_size=batch_size,
-                               num_threads=16,
+                               num_threads=12,
                                capacity=2000,
                                min_after_dequeue=1000)
     return img_data_batch, img_label_batch
@@ -185,37 +185,35 @@ def load_inputs(eval_data, data_dir, batch_size):
         key, img_data, img_label = read_img_net(file_name_queue)
         # Image processing for training the network. Note the many random
         # distortions applied to the image.
+        height = IMAGE_SIZE
+        width = IMAGE_SIZE
 
         reshape = tf.cast(img_data, tf.float32)
-        print(reshape)
+        # reshaped_image = tf.reshape(reshape, shape=[1, 300, 300, 3])
+        resized_image = tf.image.resize_image_with_crop_or_pad(reshape,
+                                                               height, width)
+        # resized_image = tf.reshape(resized_image, shape=[height, width, 3])
+        print(resized_image)
 
-        # Subtract off the mean and divide by the variance of the pixels.
-        float_image = tf.image.per_image_standardization(reshape)
+        # Subtract off the mean and divide by the stddev of the pixels.
+        float_image = tf.image.per_image_standardization(resized_image)
 
         # Set the shapes of tensors.
-        float_image.set_shape([300, 300, 3])
-
-    height = IMAGE_SIZE
-    width = IMAGE_SIZE
+        float_image.set_shape([height, width, 3])
 
     if not eval_data:
         img_data_batch, img_label_batch = \
             tf.train.shuffle_batch([float_image, img_label],
                                    batch_size=batch_size,
-                                   num_threads=16,
+                                   num_threads=12,
                                    capacity=2000,
                                    min_after_dequeue=1000)
-        # Resize the images with bicubic.
-        resized_image = tf.image.resize_bicubic(img_data_batch, size=(height, width))
     else:
         img_data_batch, img_label_batch = \
             tf.train.batch([float_image, img_label],
                            batch_size=batch_size,
-                           num_threads=16)
-        # Resize the images with bicubic.
-        resized_image = tf.image.resize_bicubic(img_data_batch,
-                                                size=(height, width))
-    return resized_image, img_label_batch
+                           num_threads=12)
+    return img_data_batch, img_label_batch
 
 
 if __name__ == "__main__":

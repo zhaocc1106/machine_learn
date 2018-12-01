@@ -189,40 +189,39 @@ class Network(object):
         tf.train.start_queue_runners()
 
         test_iter = int(math.ceil(test_sample_size / self.mini_batch))
-        train_accuracys = []
         test_accuracys = []
         for step in range(steps):
             start_time = time.time()
             images_train_batch, labels_train_batch = sess.run([images_train,
                                                                labels_train])
-            images_test_batch, labels_test_batch = sess.run([images_test,
-                                                             labels_test])
-            train_op, train_loss, train_top_k = \
-                sess.run([self.train_op, self.loss, self.top_k_op],
+            train_op, train_loss = \
+                sess.run([self.train_op, self.loss],
                          feed_dict={self.eta: eta,
                                     self.images: images_train_batch,
                                     self.labels_: labels_train_batch})
-            train_accuracy = np.sum(train_top_k) / self.mini_batch
-            train_accuracys.append(train_accuracy)
 
-            test_accuracy = 0.0
-            for i in range(test_iter):
-                test_accuracy = test_accuracy + np.sum(
-                    sess.run([self.top_k_op],
-                             feed_dict=
-                             {self.eta: eta,
-                              self.images: images_test_batch,
-                              self.labels_: labels_test_batch})) / self.mini_batch
-
-            test_accuracy = test_accuracy / test_iter
-            test_accuracys.append(test_accuracy)
-            time_cost = time.time() - start_time
-            if step % 10 == 0:
+            if step % 1000 == 0:
+                time_cost = time.time() - start_time
                 print("Step({0}) end with {1}s".format(step, time_cost))
+
+            if step % 5000 == 0: # One epoch.
+                test_accuracy = 0.0
+                for i in range(test_iter):
+                    images_test_batch, labels_test_batch = sess.run(
+                        [images_test, labels_test])
+                    test_accuracy = test_accuracy + np.sum(
+                        sess.run([self.top_k_op],
+                                 feed_dict=
+                                 {self.eta: eta,
+                                  self.images: images_test_batch,
+                                  self.labels_: labels_test_batch})) / self.mini_batch
+
+                test_accuracy = test_accuracy / test_iter
+                test_accuracys.append(test_accuracy)
                 print(
-                    "train_loss:{0:.5}, train_accuracy:{1:.2%}, validation_accuracy:{"
-                    "2:.2%}".format(train_loss, train_accuracy, test_accuracy))
-        return train_accuracys, test_accuracys
+                    "train_loss:{0:.5}, validation_accuracy:{"
+                    "1:.2%}".format(train_loss, test_accuracy))
+        return test_accuracys
 
     def __calc_loss(self, logits, labels):
         """Define the loss by logits and desired labels.
@@ -266,20 +265,17 @@ class Network(object):
         return weights
 
 
-def plot_accuracy(training_accuracy, evaluation_accuracy):
+def plot_accuracy(evaluation_accuracy):
     """Plot the accuracy change of all epochs.
 
     Args:
-        training_accuracy: The training accuracy list.
         evaluation_accuracy: The evaluation accuracy list.
-        best_test_accuracy: The best test accuracy.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    x = np.arange(0, len(training_accuracy), 1)
-    ax.plot(x, training_accuracy, label='train accuracy')
+    x = np.arange(0, len(evaluation_accuracy), 1)
     ax.plot(x, evaluation_accuracy, label='validation accuracy')
-    plt.xlabel("steps")
+    plt.xlabel("epochs")
     plt.ylabel("accuracy")
     plt.title("The best validation accuracy:{0:.2%}".format(
         np.max(evaluation_accuracy)))
@@ -297,6 +293,7 @@ if __name__ == "__main__":
     # print(images_test.shape)
     # print("label_test shape:")
     # print(label_test.shape)
-    network = Network(mini_batch=280)
-    train_accuracys, validation_accuracys = network.SGD(eta=1e-3, steps=3000)
-    plot_accuracy(train_accuracys, validation_accuracys)
+    network = Network(mini_batch=10)
+    validation_accuracys = network.SGD(eta=1e-3, steps=300000,
+                                       test_sample_size=5000)
+    plot_accuracy(validation_accuracys)

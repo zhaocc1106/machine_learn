@@ -1,3 +1,4 @@
 *.idea/
 *__pycache__/
 *.pyc
+NeuralNetworks-tensorflow/model_saver/

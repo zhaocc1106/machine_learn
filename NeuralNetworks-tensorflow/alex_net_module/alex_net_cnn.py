@@ -17,9 +17,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 import tools.img_net_tf_records_reader as img_net_reader
+from PIL import Image
+import alex_net_module.constants as constants
 
-tf_records_dir = "../image_net_records_files/"
-
+# data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
 
 def load_random_image_net_datas(batch_size):
     """Load random images and labels with mini batch size.
@@ -46,10 +47,13 @@ def load_image_net_datas(batch_size):
     Returns:
         Training and test mini batch datas.
     """
-    image_train, label_train = img_net_reader.load_distorted_inputs(tf_records_dir,
-                                                                    batch_size)
-    image_test, label_test = img_net_reader.load_inputs(True, tf_records_dir,
+    image_train, label_train = img_net_reader.load_distorted_inputs(
+                                                          constants.tf_records_dir,
+                                                          batch_size)
+    image_test, label_test = img_net_reader.load_inputs(True, constants.tf_records_dir,
                                                         batch_size)
+    # image_train, label_train = cifar10_input.distorted_inputs(data_dir, batch_size)
+    # image_test, label_test = cifar10_input.inputs(True, data_dir, batch_size)
     return image_train, label_train, image_test, label_test
 
 
@@ -65,13 +69,15 @@ def describe_tensor(t):
 class Network(object):
     """The AlexNet CNN."""
 
-    def __init__(self, mini_batch):
+    def __init__(self, mini_batch, keep_prob):
         """The construct function of AlexNet CNN.
 
         Args:
             mini_batch: The mini batch size.
+            keep_prob: The dropout keep probability.
         """
         self.mini_batch = mini_batch
+        self.keep_prob = keep_prob
         self.eta = tf.placeholder(dtype=tf.float32)
 
         # Define inputs placeholder.
@@ -109,7 +115,7 @@ class Network(object):
             conv = tf.nn.conv2d(images, kernel, strides=[1, 4, 4, 1],
                                 padding="SAME", name="conv")
             describe_tensor(conv)
-            conv1 = tf.nn.relu(tf.add(conv, bias), name="output")
+            conv1 = tf.nn.relu(tf.nn.bias_add(conv, bias), name="output")
             describe_tensor(conv1)
             parameters += [kernel, bias]
         # Define the first local response normalization layer.
@@ -137,7 +143,7 @@ class Network(object):
             conv = tf.nn.conv2d(pool1, kernel, strides=[1, 1, 1, 1],
                                 padding="SAME", name="conv")
             describe_tensor(conv)
-            conv2 = tf.nn.relu(tf.add(conv, bias), name="output")
+            conv2 = tf.nn.relu(tf.nn.bias_add(conv, bias), name="output")
             describe_tensor(conv2)
             parameters += [kernel, bias]
         # Define the second local response normalization layer.
@@ -165,7 +171,7 @@ class Network(object):
             conv = tf.nn.conv2d(pool2, kernel, strides=[1, 1, 1, 1],
                                 padding="SAME", name="conv")
             describe_tensor(conv)
-            conv3 = tf.nn.relu(tf.add(conv, bias), name="output")
+            conv3 = tf.nn.relu(tf.nn.bias_add(conv, bias), name="output")
             describe_tensor(conv3)
             parameters += [kernel, bias]
 
@@ -183,7 +189,7 @@ class Network(object):
             conv = tf.nn.conv2d(conv3, kernel, strides=[1, 1, 1, 1],
                                 padding="SAME", name="conv")
             describe_tensor(conv)
-            conv4 = tf.nn.relu(tf.add(conv, bias), name="output")
+            conv4 = tf.nn.relu(tf.nn.bias_add(conv, bias), name="output")
             describe_tensor(conv4)
             parameters += [kernel, bias]
 
@@ -201,7 +207,7 @@ class Network(object):
             conv = tf.nn.conv2d(conv4, kernel, strides=[1, 1, 1, 1],
                                 padding="SAME", name="conv")
             describe_tensor(conv)
-            conv5 = tf.nn.relu(tf.add(conv, bias), name="output")
+            conv5 = tf.nn.relu(tf.nn.bias_add(conv, bias), name="output")
             describe_tensor(conv5)
             parameters += [kernel, bias]
         # Define the fifth max pool layer.
@@ -219,48 +225,51 @@ class Network(object):
         with tf.name_scope("full-con6") as scope:
             dim = flatten.get_shape()[1].value
             weights = self.__init_weights_with_loss([dim, 4096],
-                                                    stddev=1 / np.sqrt(4096),
-                                                    wl=0.004)
+                                                    stddev=0.01,
+                                                    wl=0.008)
             describe_tensor(weights)
-            bias = tf.Variable(tf.constant(1.0,
+            bias = tf.Variable(tf.constant(0.1,
                                            dtype=tf.float32,
                                            shape=[4096]),
                                name="bias")
             describe_tensor(bias)
-            local6 = tf.nn.relu(tf.add(tf.matmul(flatten, weights), bias),
+            local6 = tf.nn.relu(tf.matmul(flatten, weights) + bias,
                                 name="output")
             describe_tensor(local6)
+            dropout6 = tf.nn.dropout(local6, keep_prob=self.keep_prob)
             parameters += [weights, bias]
 
         # Define the seventh full-connected layer.
         with tf.name_scope("full-con7") as scope:
             weights = self.__init_weights_with_loss([4096, 4096],
-                                                    stddev=1 / np.sqrt(4096),
-                                                    wl=0.004)
+                                                    stddev=0.01,
+                                                    wl=0.008)
             describe_tensor(weights)
-            bias = tf.Variable(tf.constant(1.0,
+            bias = tf.Variable(tf.constant(0.1,
                                            dtype=tf.float32,
                                            shape=[4096]),
                                name="bias")
-            local7 = tf.nn.relu(tf.add(tf.matmul(local6, weights), bias),
+            local7 = tf.nn.relu(tf.matmul(local6, weights) + bias,
                                 name="output")
             describe_tensor(local7)
+            dropout7 = tf.nn.dropout(local7, keep_prob=self.keep_prob)
             parameters += [weights, bias]
 
         # Define the eighth full-connected layer.
         with tf.name_scope("full-con8") as scope:
-            weights = self.__init_weights_with_loss([4096, 1000],
-                                                    stddev=1 / np.sqrt(
-                                                        1000),
-                                                    wl=0.004)
+            weights = self.__init_weights_with_loss([4096, 10],
+                                                    stddev=0.01,
+                                                    wl=0.0)
             describe_tensor(weights)
-            bias = tf.Variable(tf.constant(1.0,
+            bias = tf.Variable(tf.constant(0.0,
                                            dtype=tf.float32,
-                                           shape=[1000]),
+                                           shape=[10]),
                                name="bias")
-            local8 = tf.nn.relu(tf.add(tf.matmul(local7, weights), bias),
-                                name="output")
+            local8 = tf.matmul(local7, weights) + bias
             describe_tensor(local8)
+            # logits = tf.nn.sigmoid(local8, "logits")
+            # describe_tensor(logits)
+
             parameters += [weights, bias]
 
         # Calc the total losses.
@@ -271,6 +280,7 @@ class Network(object):
             loss=loss)
         # Define the accuracy calculation.
         top_k_op = tf.nn.in_top_k(local8, labels, 1)
+        self.pred = tf.nn.softmax(local8)
         return train_op, loss, top_k_op
 
     def __calc_loss(self, logits, labels):
@@ -284,9 +294,12 @@ class Network(object):
         Returns:
             The loss of the CNN.
         """
+        labels = tf.cast(labels, tf.int64)
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
             logits=logits, labels=labels, name="cross_entropy_per_example")
+        describe_tensor(cross_entropy)
         cross_entropy_mean = tf.reduce_mean(cross_entropy, name="cross_entropy")
+        describe_tensor(cross_entropy_mean)
 
         # Add weights losses of normalization into the total losses.
         tf.add_to_collection("losses", cross_entropy_mean)
@@ -339,56 +352,111 @@ class Network(object):
         tf.train.start_queue_runners()
 
         test_iter = int(math.ceil(test_sample_size / self.mini_batch))
-        train_accuracys = []
         test_accuracys = []
+
+        model_saver = tf.train.Saver()
+
         for step in range(steps):
             start_time = time.time()
-            images_train_data, labels_train_data, images_test_data, \
-            labels_test_data = sess.run([
-                images_train, labels_train,
-                images_test, labels_test])
-            train_op, train_loss, train_top_k = \
-                sess.run([self.train_op, self.loss, self.top_k_op],
+            images_train_data, labels_train_data = sess.run([
+                images_train, labels_train])
+            train_op, train_loss = \
+                sess.run([self.train_op, self.loss],
                          feed_dict={self.eta: eta,
                                     self.images: images_train_data,
+
                                     self.labels_: labels_train_data})
-            train_accuracy = np.sum(train_top_k) / self.mini_batch
-            train_accuracys.append(train_accuracy)
+            if step % 200 == 0:
+                time_cost = time.time() - start_time
+                print("Train step({0}) end with {1}s with train_loss:{"
+                      "2}".format(step, time_cost, train_loss))
 
-            test_accuracy = 0.0
-            for i in range(test_iter):
-                test_accuracy = test_accuracy + np.sum(
-                    sess.run([self.top_k_op],
-                             feed_dict=
-                             {self.eta: eta,
-                              self.images: images_test_data,
-                              self.labels_: labels_test_data})) / \
-                                self.mini_batch
+            if step % 1000 == 0: # One epoch.
+                test_accuracy = 0.0
+                for i in range(test_iter):
+                    images_test_data, labels_test_data = sess.run([
+                        images_test, labels_test])
+                    test_loss, top_k_op= \
+                        sess.run([self.loss, self.top_k_op],
+                                 feed_dict={self.eta: eta,
+                                            self.images: images_test_data,
+                                            self.labels_: labels_test_data})
+                    # print(np.sum(top_k_op))
+                    test_accuracy = test_accuracy + np.sum(top_k_op) / \
+                                    float(self.mini_batch)
 
-            test_accuracy = test_accuracy / test_iter
-            test_accuracys.append(test_accuracy)
-            time_cost = time.time() - start_time
-            if step % 10 == 0:
-                print("Step({0}) end with {1}s".format(step, time_cost))
-            print(
-                "train_loss:{0:.5}, train_accuracy:{1:.2%}, validation_accuracy:{"
-                "2:.2%}".format(train_loss, train_accuracy, test_accuracy))
-        return train_accuracys, test_accuracys
+                test_accuracy = float(test_accuracy) / float(test_iter)
+                test_accuracys.append(test_accuracy)
+                print(
+                    "test_loss:{0:.5}, test_accuracy:{1:.2%}"
+                        .format(test_loss, test_accuracy))
+
+                # If accuracy don't upgrade after every 10 epochs. Update
+                # eta: Eta = eta / 10.
+                if step != 0 and step % 10000 == 0: # Ten epochs.
+                    if test_accuracys[int(step / 1000 - 10)] >= test_accuracy:
+                        eta = eta / 10
+                        print("Accuracy not upgrade after 10 epochs. Adjust "
+                              "the eta. Now eta:{0}".format(eta))
+                    model_saver.save(sess, "../model_saver/alex_net_slp",
+                                     global_step=step)
+
+        return test_accuracys
+
+    def predict(self, image_file):
+        try:
+            img = Image.open(image_file)
+        except OSError as e:
+            print(e)
+            print("Error image " + image_file)
+            return
+
+        # Unify resolution to 224 * 224.
+        img = np.array(
+            img.resize((constants.IMAGE_SIZE, constants.IMAGE_SIZE)))
+        # print("img:")
+        # print(img)
+
+        # Check if the image is rgb image.
+        if len(img.shape) != 3 or img.shape[2] != 3:
+            print("Not rgb image " + image_file)
+            return
+
+        img_tensor = tf.convert_to_tensor(img)
+        img_tensor = tf.cast(img_tensor, tf.float32)
+        # Standardize the image data.
+        stand_img_tensor = tf.image.per_image_standardization(img_tensor)
+        stand_img_tensor.set_shape([constants.IMAGE_SIZE, constants.IMAGE_SIZE,
+                                    3])
+
+        sess = tf.Session()
+        stand_img = np.array(sess.run([stand_img_tensor]))
+        # print("stand_img:")
+        # print(stand_img)
+        # print(np.mean(stand_img[0]))
+        # print(np.var(stand_img[0]))
+
+        # Load model
+        model_saver = tf.train.Saver()
+        model_saver.restore(sess, "../model_saver/alex_net_slp-190000")
+        predict = sess.run([self.pred], feed_dict={self.images: stand_img})
+        print("predict:")
+        print(predict[0])
+        print("I guess this image is {0}".format(constants.labels[np.argmax(
+            predict)]))
 
 
-def plot_accuracy(training_accuracy, evaluation_accuracy):
+def plot_accuracy(evaluation_accuracy):
     """Plot the accuracy change of all epochs.
 
     Args:
-        training_accuracy: The training accuracy list.
         evaluation_accuracy: The evaluation accuracy list.
     """
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    x = np.arange(0, len(training_accuracy), 1)
-    ax.plot(x, training_accuracy, label='train accuracy')
+    x = np.arange(0, len(evaluation_accuracy), 1)
     ax.plot(x, evaluation_accuracy, label='validation accuracy')
-    plt.xlabel("steps")
+    plt.xlabel("epoch")
     plt.ylabel("accuracy")
     plt.title("The best validation accuracy:{0:.2%}".format(
         np.max(evaluation_accuracy)))
@@ -397,8 +465,10 @@ def plot_accuracy(training_accuracy, evaluation_accuracy):
 
 
 if __name__ == "__main__":
-    network = Network(10)
-    training_accuracys, validation_accuracys = \
-        network.SGD(eta=1e-3,
-                    steps=500)
-    plot_accuracy(training_accuracys, validation_accuracys)
+    network = Network(mini_batch=10, keep_prob=0.6)
+    validation_accuracys = \
+        network.SGD(eta=0.001,
+                    steps=200000, # 200 epochs.
+                    test_sample_size=1000)
+    plot_accuracy(validation_accuracys)
+    # network.predict("../image_net_origin_files/dog/dog_419.jpg")
