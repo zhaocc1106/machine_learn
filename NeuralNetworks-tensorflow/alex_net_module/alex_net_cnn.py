@@ -16,11 +16,11 @@ import math
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-import tools.img_net_tf_records_reader as img_net_reader
+import alex_net_module.cifar10_input_for_alex_net as cifar10_input
 from PIL import Image
 import alex_net_module.constants as constants
 
-# data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
+data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
 
 def load_random_image_net_datas(batch_size):
     """Load random images and labels with mini batch size.
@@ -47,13 +47,16 @@ def load_image_net_datas(batch_size):
     Returns:
         Training and test mini batch datas.
     """
-    image_train, label_train = img_net_reader.load_distorted_inputs(
-                                                          constants.tf_records_dir,
-                                                          batch_size)
-    image_test, label_test = img_net_reader.load_inputs(True, constants.tf_records_dir,
-                                                        batch_size)
-    # image_train, label_train = cifar10_input.distorted_inputs(data_dir, batch_size)
-    # image_test, label_test = cifar10_input.inputs(True, data_dir, batch_size)
+    # Load the ImageNet data.
+    # image_train, label_train = img_net_reader.load_distorted_inputs(
+    #                                                       constants.tf_records_dir,
+    #                                                       batch_size)
+    # image_test, label_test = img_net_reader.load_inputs(True, constants.tf_records_dir,
+    #                                                     batch_size)
+
+    # Load the cifar10 data.
+    image_train, label_train = cifar10_input.distorted_inputs(data_dir, batch_size)
+    image_test, label_test = cifar10_input.inputs(True, data_dir, batch_size)
     return image_train, label_train, image_test, label_test
 
 
@@ -329,12 +332,13 @@ class Network(object):
                 tf.add_to_collection("losses", weight_loss)
         return weights
 
-    def SGD(self, eta, steps, test_sample_size=1000):
+    def SGD(self, eta, epochs, epoch_train_size, test_sample_size=1000):
         """Training and test AlexNet CNN using stochastic gradient descent.
 
         Args:
             eta: The learning rate.
-            steps: The total steps to train network.
+            epochs: Thr train epochs.
+            epoch_train_size: The train size of every epoch.
             test_sample_size: The size of sample to test.
 
         Returns:
@@ -344,6 +348,10 @@ class Network(object):
             every step.
 
         """
+        # Calc the steps of every epoch.
+        every_epoch_steps = epoch_train_size / self.mini_batch
+        # Calc the total steps of total epochs.
+        steps = int(epochs * every_epoch_steps)
         sess = tf.InteractiveSession()
         tf.global_variables_initializer().run()
 
@@ -353,8 +361,6 @@ class Network(object):
 
         test_iter = int(math.ceil(test_sample_size / self.mini_batch))
         test_accuracys = []
-
-        model_saver = tf.train.Saver()
 
         for step in range(steps):
             start_time = time.time()
@@ -366,12 +372,12 @@ class Network(object):
                                     self.images: images_train_data,
 
                                     self.labels_: labels_train_data})
-            if step % 200 == 0:
+            if step % 1000 == 0:
                 time_cost = time.time() - start_time
                 print("Train step({0}) end with {1}s with train_loss:{"
                       "2}".format(step, time_cost, train_loss))
 
-            if step % 1000 == 0: # One epoch.
+            if step % every_epoch_steps == 0 or step == steps - 1: # One epoch.
                 test_accuracy = 0.0
                 for i in range(test_iter):
                     images_test_data, labels_test_data = sess.run([
@@ -393,13 +399,12 @@ class Network(object):
 
                 # If accuracy don't upgrade after every 10 epochs. Update
                 # eta: Eta = eta / 10.
-                if step != 0 and step % 10000 == 0: # Ten epochs.
-                    if test_accuracys[int(step / 1000 - 10)] >= test_accuracy:
+                if step != 0 and step % (every_epoch_steps * 10) == 0:
+                    if test_accuracys[int(step / every_epoch_steps - 10)] >=\
+                            test_accuracy:
                         eta = eta / 10
                         print("Accuracy not upgrade after 10 epochs. Adjust "
                               "the eta. Now eta:{0}".format(eta))
-                    model_saver.save(sess, "../model_saver/alex_net_slp",
-                                     global_step=step)
 
         return test_accuracys
 
@@ -465,10 +470,31 @@ def plot_accuracy(evaluation_accuracy):
 
 
 if __name__ == "__main__":
+    # Train alex net using cifar10 data.
+    network = Network(mini_batch=20, keep_prob=0.6)
+    validation_accuracys = \
+        network.SGD(eta=0.001,
+                    epochs=200,
+                    epoch_train_size=40000,
+                    test_sample_size=5000)
+    plot_accuracy(validation_accuracys)
+    sess = tf.InteractiveSession()
+    model_saver = tf.train.Saver()
+    model_saver.save(sess, "../model_saver/alex_net.ckpt",
+                     global_step=(200 * 40000))
+
+    # Train alex net using ImageNet data.
+    """
     network = Network(mini_batch=10, keep_prob=0.6)
     validation_accuracys = \
         network.SGD(eta=0.001,
-                    steps=200000, # 200 epochs.
+                    epochs=200,
+                    epoch_train_size=10000,
                     test_sample_size=1000)
     plot_accuracy(validation_accuracys)
-    # network.predict("../image_net_origin_files/dog/dog_419.jpg")
+    sess = tf.InteractiveSession()
+    model_saver = tf.train.Saver()
+    model_saver.save(sess, "../model_saver/alex_net.ckpt",
+                     global_step=(200 * 10000))
+    network.predict("../image_net_origin_files/dog/dog_419.jpg")
+    """
