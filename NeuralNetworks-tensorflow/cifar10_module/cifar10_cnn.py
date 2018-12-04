@@ -293,7 +293,7 @@ if __name__ == "__main__":
     # print(images_test.shape)
     # print("label_test shape:")
     # print(label_test.shape)
-    network = Network(mini_batch=10)
-    validation_accuracys = network.SGD(eta=1e-3, steps=300000,
+    network = Network(mini_batch=280)
+    validation_accuracys = network.SGD(eta=1e-3, steps=3000,
                                        test_sample_size=5000)
     plot_accuracy(validation_accuracys)

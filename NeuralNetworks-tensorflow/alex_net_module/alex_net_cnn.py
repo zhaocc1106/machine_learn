@@ -359,6 +359,7 @@ class Network(object):
             load_image_net_datas(self.mini_batch)
         tf.train.start_queue_runners()
 
+        model_saver = tf.train.Saver()
         test_iter = int(math.ceil(test_sample_size / self.mini_batch))
         test_accuracys = []
 
@@ -379,6 +380,7 @@ class Network(object):
 
             if step % every_epoch_steps == 0 or step == steps - 1: # One epoch.
                 test_accuracy = 0.0
+                test_loss_mean = 0.0
                 for i in range(test_iter):
                     images_test_data, labels_test_data = sess.run([
                         images_test, labels_test])
@@ -390,12 +392,14 @@ class Network(object):
                     # print(np.sum(top_k_op))
                     test_accuracy = test_accuracy + np.sum(top_k_op) / \
                                     float(self.mini_batch)
+                    test_loss_mean += test_loss
 
-                test_accuracy = float(test_accuracy) / float(test_iter)
+                test_accuracy = test_accuracy / test_iter
+                test_loss_mean = test_loss_mean / test_iter
                 test_accuracys.append(test_accuracy)
                 print(
                     "test_loss:{0:.5}, test_accuracy:{1:.2%}"
-                        .format(test_loss, test_accuracy))
+                        .format(test_loss_mean, test_accuracy))
 
                 # If accuracy don't upgrade after every 10 epochs. Update
                 # eta: Eta = eta / 10.
@@ -406,6 +410,8 @@ class Network(object):
                         print("Accuracy not upgrade after 10 epochs. Adjust "
                               "the eta. Now eta:{0}".format(eta))
 
+        model_saver.save(sess, "../model_saver/alex_net.ckpt",
+                         global_step=steps)
         return test_accuracys
 
     def predict(self, image_file):
@@ -471,17 +477,13 @@ def plot_accuracy(evaluation_accuracy):
 
 if __name__ == "__main__":
     # Train alex net using cifar10 data.
-    network = Network(mini_batch=20, keep_prob=0.6)
+    network = Network(mini_batch=10, keep_prob=0.6)
     validation_accuracys = \
         network.SGD(eta=0.001,
-                    epochs=200,
+                    epochs=10,
                     epoch_train_size=40000,
                     test_sample_size=5000)
     plot_accuracy(validation_accuracys)
-    sess = tf.InteractiveSession()
-    model_saver = tf.train.Saver()
-    model_saver.save(sess, "../model_saver/alex_net.ckpt",
-                     global_step=(200 * 40000))
 
     # Train alex net using ImageNet data.
     """
@@ -492,9 +494,5 @@ if __name__ == "__main__":
                     epoch_train_size=10000,
                     test_sample_size=1000)
     plot_accuracy(validation_accuracys)
-    sess = tf.InteractiveSession()
-    model_saver = tf.train.Saver()
-    model_saver.save(sess, "../model_saver/alex_net.ckpt",
-                     global_step=(200 * 10000))
     network.predict("../image_net_origin_files/dog/dog_419.jpg")
     """
