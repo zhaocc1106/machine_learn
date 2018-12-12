@@ -16,12 +16,14 @@ import math
 import numpy as np
 import tensorflow as tf
 import tools.words_downloader_and_reader as words_downloader_and_reader
+import matplotlib.pyplot as plt
+from sklearn.manifold import TSNE
 
-data_index = 0 # The data index in text data.
-data = [] # The number list of every word.
-count = {} # The dictionary of ```(word, count)```.
-dicionary = {} # The dictionary of ```(word, number)```.
-reverse_dictionary = {} # The dictionary of ```(number, word)```.
+data_index = 0  # The data index in text data.
+data = []  # The number list of every word.
+count = {}  # The dictionary of ```(word, count)```.
+dicionary = {}  # The dictionary of ```(word, number)```.
+reverse_dictionary = {}  # The dictionary of ```(number, word)```.
 
 
 def generate_batch(data, batch_size, num_skips, skip_window):
@@ -126,7 +128,6 @@ class Network(object):
                                     self.normalized_embeddings,
                                     transpose_b=True)
 
-
     def __inference(self):
         """Inference the train operation and train loss.
 
@@ -138,9 +139,9 @@ class Network(object):
         with tf.device("/cpu:0"):
             self.embeddings = tf.Variable(tf.random_uniform([
                 self.vocabulary_size,
-             self.embedding_size], -1, 1))
+                self.embedding_size], -1, 1))
             embeded = tf.nn.embedding_lookup(self.embeddings,
-                                                  self.train_inputs)
+                                             self.train_inputs)
 
             nce_weights = tf.Variable(tf.truncated_normal(
                 shape=[self.vocabulary_size, self.embedding_size],
@@ -171,12 +172,14 @@ class Network(object):
             the similarity.
 
         """
+        assert epochs > 0, "epochs wrong."
+        assert epoch_train_size > 0, "epoch_train_size wrong."
         # Calc the steps of every epoch.
         every_epoch_steps = epoch_train_size
         # Calc the total steps of total epochs.
         steps = int(epochs * every_epoch_steps)
-        # print(every_epoch_steps)
-        # print(steps)
+        print(every_epoch_steps)
+        print(steps)
 
         global data, reverse_dictionary
         session = tf.InteractiveSession()
@@ -197,14 +200,15 @@ class Network(object):
                                         })
             losses += train_loss
 
-            if step > 0 and step % 1000 == 0:
+            if (step > 0 and step % 1000 == 0) or step == (steps - 1):
                 losses = losses / 1000
                 print("Train {0} steps with losses:{1}".format(step,
                                                                losses))
                 losses = 0.0
 
             # Show the words with top-k similarity for every valid words.
-            if step > 0 and step % 1000 == 0:
+            if (step > 0 and step % every_epoch_steps == 0) or step == (steps
+                                                                        - 1):
                 sim = self.similarity.eval()
                 for i in range(self.valid_size):
                     valid_word = reverse_dictionary[self.valid_samples[i]]
@@ -218,8 +222,29 @@ class Network(object):
                                               reverse_dictionary[j])
                     print(log_str)
             final_embeddings = self.normalized_embeddings.eval()
-
         return final_embeddings
+
+
+def plot_with_labels(low_dim_embeds, labels):
+    """Plot the words vectors with 2-dimensional space.
+
+    :param low_dim_embeds: The lower dimension embeddings.
+    :param labels: The labels corresponding with embeddings.
+    """
+    print("plot_with_labels")
+    assert low_dim_embeds.shape[0] >= len(labels), "More labels than " \
+                                                   "embeddings."
+    plt.figure(figsize=(18, 18))
+    for i, label in enumerate(labels):
+        x, y = low_dim_embeds[i, :]  # Get the coordinate.
+        plt.scatter(x, y)
+        plt.annotate(label,
+                     xy=(x, y),
+                     ha="right",
+                     va="bottom")
+    plt.title("Words vector")
+    plt.show()
+
 
 if __name__ == "__main__":
     words_downloader_and_reader.maybe_download("text8.zip")
@@ -247,8 +272,17 @@ if __name__ == "__main__":
                       valid_window=100,
                       num_sampled=64)
 
-    network.SGD(num_skips=2,
-                skip_window=1,
-                eta=1.0,
-                epochs=50,
-                epoch_train_size=10000)
+    final_embeddings = network.SGD(num_skips=2,
+                                   skip_window=1,
+                                   eta=1.0,
+                                   epochs=10,
+                                   epoch_train_size=10000)
+    # print(final_embeddings)
+    if not final_embeddings is None:
+        tsne = TSNE(perplexity=30, n_components=2, init="pca", n_iter=5000)
+        plot_only = 100
+        # PCA dimension reduction.
+        low_dim_embeds = tsne.fit_transform(final_embeddings[:plot_only, :])
+        labels = [reverse_dictionary[i] for i in range(plot_only)]
+        plot_with_labels(low_dim_embeds, labels)
+
