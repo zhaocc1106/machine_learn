@@ -11,6 +11,7 @@ Date:    2018/11/9 9:38
 # System libs
 import time
 import math
+import os
 
 # 3rd part libs
 import numpy as np
@@ -410,6 +411,8 @@ class Network(object):
                         print("Accuracy not upgrade after 10 epochs. Adjust "
                               "the eta. Now eta:{0}".format(eta))
 
+        if not os.path.exists("../model_saver/"):
+            os.mkdir("../model_saver/")
         model_saver.save(sess, "../model_saver/alex_net.ckpt",
                          global_step=steps)
         return test_accuracys
