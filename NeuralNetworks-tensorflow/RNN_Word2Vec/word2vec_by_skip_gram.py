@@ -221,7 +221,7 @@ class Network(object):
                         log_str = "%s, %s" % (log_str,
                                               reverse_dictionary[j])
                     print(log_str)
-            final_embeddings = self.normalized_embeddings.eval()
+        final_embeddings = self.normalized_embeddings.eval()
         return final_embeddings
 
 
@@ -251,7 +251,6 @@ if __name__ == "__main__":
     words = words_downloader_and_reader.read_data("text8.zip")
     print("words len:\n", len(words))
     vocabulary_size = 50000
-    global count, data, dicionary, reverse_dictionary
     count, data, dicionary, reverse_dictionary = \
         words_downloader_and_reader.build_dataset(words, vocabulary_size)
     print("count[:10]:\n", str(count[:10]))
