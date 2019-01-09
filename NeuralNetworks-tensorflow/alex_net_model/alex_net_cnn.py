@@ -411,9 +411,9 @@ class Network(object):
                         print("Accuracy not upgrade after 10 epochs. Adjust "
                               "the eta. Now eta:{0}".format(eta))
 
-        if not os.path.exists("../model_saver/"):
-            os.mkdir("../model_saver/")
-        model_saver.save(sess, "../model_saver/alex_net.ckpt",
+        if not os.path.exists("../model_saver/alex_net_model"):
+            os.mkdir("../model_saver/alex_net_model")
+        model_saver.save(sess, "../model_saver/alex_net_model/alex_net.ckpt",
                          global_step=steps)
         return test_accuracys
 
@@ -452,7 +452,7 @@ class Network(object):
 
         # Load model
         model_saver = tf.train.Saver()
-        model_saver.restore(sess, "../model_saver/alex_net_slp-190000")
+        model_saver.restore(sess, "../model_saver/alex_net_model/alex_net_slp-190000")
         predict = sess.run([self.pred], feed_dict={self.images: stand_img})
         print("predict:")
         print(predict[0])

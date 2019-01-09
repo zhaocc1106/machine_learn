@@ -1,7 +1,7 @@
 #
-# Copyright (c) 2018 Baidu.com, Inc. All Rights Reserved
+# Copyright (c) 2019 Baidu.com, Inc. All Rights Reserved
 #
-"""The ptb model.
+"""The Bi-RNN model.
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/12/21 9:36

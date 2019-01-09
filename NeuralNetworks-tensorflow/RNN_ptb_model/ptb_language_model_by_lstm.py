@@ -14,7 +14,7 @@ import time
 # 3rd-part libs
 import tensorflow as tf
 import numpy as np
-import ptb_model.reader as reader
+import RNN_ptb_model.reader as reader
 
 class PTBInput(object):
     """The PTB model data input class.
@@ -244,6 +244,7 @@ class SmallConfig(object):
     num_steps = 20
     vocab_size = 10000
 
+
 class MediumConfig(object):
     """The medium model config.
 
@@ -435,7 +436,7 @@ if __name__ == "__main__":
 
         # train_writer = tf.summary.FileWriter("./")
         with tf.train.MonitoredTrainingSession(
-                checkpoint_dir = "../model_saver/ptb_model") as sess:
+                checkpoint_dir = "../model_saver/RNN_ptb_model") as sess:
             # tf.global_variables_initializer().run(session=sess)
             tf.train.start_queue_runners(sess=sess)
             for i in range(config.max_max_epoch):
