@@ -399,8 +399,8 @@ class Network(object):
                 test_loss_mean = test_loss_mean / test_iter
                 test_accuracys.append(test_accuracy)
                 print(
-                    "test_loss:{0:.5}, test_accuracy:{1:.2%}"
-                        .format(test_loss_mean, test_accuracy))
+                    "step:{0}, test_loss:{1:.5}, test_accuracy:{2:.2%}"
+                        .format(step, test_loss_mean, test_accuracy))
 
                 # If accuracy don't upgrade after every 10 epochs. Update
                 # eta: Eta = eta / 10.
@@ -417,7 +417,16 @@ class Network(object):
                          global_step=steps)
         return test_accuracys
 
-    def predict(self, image_file):
+    def predict(self, image_file, model_check_point):
+        """Predict the label of image.
+
+        Args:
+            image_file: The test image.
+            model_check_point: The check point file of model saver.
+
+        Returns:
+            label: The label of the image.
+        """
         try:
             img = Image.open(image_file)
         except OSError as e:
@@ -452,12 +461,13 @@ class Network(object):
 
         # Load model
         model_saver = tf.train.Saver()
-        model_saver.restore(sess, "../model_saver/alex_net_model/alex_net_slp-190000")
+        model_saver.restore(sess, model_check_point)
         predict = sess.run([self.pred], feed_dict={self.images: stand_img})
         print("predict:")
         print(predict[0])
         print("I guess this image is {0}".format(constants.labels[np.argmax(
             predict)]))
+        return predict[0]
 
 
 def plot_accuracy(evaluation_accuracy):
