@@ -94,6 +94,57 @@ class BiRNN(object):
         print(x)
         x = tf.split(x, self.__config.n_steps)
         print(x)
+        """
+        The initial input structure is as flowing. shape is
+        batch_size * height * weight (3D):
+        weight: 28
+        height: 28
+        batch_size: 128
+        ↑        ←   w   →
+        |      ↑ ×××××××××
+        |        ×××××××××
+        |      h ×××××××××
+        |        ×××××××××
+        |      ↓ ×××××××××
+        |
+        b        ←   w   →
+        a      ↑ ×××××××××
+        c        ×××××××××
+        t      h ×××××××××
+        h        ×××××××××
+        |      ↓ ×××××××××
+        |
+        |        ←   w   →
+        |      ↑ ×××××××××
+        |        ×××××××××
+        |      h ×××××××××
+        |        ×××××××××
+        |      ↓ ×××××××××
+        ↓           ...
+
+
+        The final input structure is as flowing, shape is
+        n_step * (batch_size * weight) (2D):
+        weight: 28
+        n_step: 28 (rnn unrolled step)
+        batch_size: 128
+        ↑       ←-----------------batch----------------→
+        |       ←   w   →←   w   →←   w   →←   w   → ...
+        |       ****************************************
+        |
+        |       ←-----------------batch----------------→
+        |       ←   w   →←   w   →←   w   →←   w   → ...
+        n       ****************************************
+        s
+        t       ←-----------------batch----------------→
+        e       ←   w   →←   w   →←   w   →←   w   → ...
+        p       ****************************************
+        |
+        |       ←-----------------batch----------------→
+        |       ←   w   →←   w   →←   w   →←   w   → ...
+        |       ****************************************
+        ↓                          ...
+        """
 
         lstm_fw_cell = tf.nn.rnn_cell.LSTMCell(
             num_units=self.__config.n_hidden, forget_bias=1.0)
@@ -225,18 +276,18 @@ class BiRNN(object):
                                                         validation_accuracy))
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
-            # Calc the test accuracy.
-            test_accuracy = self.__accuracy.eval({
-                self.__x: np.reshape(
-                    test_data.images, [test_data_size, 28, 28]),
-                self.__y: test_data.labels})
-            print("Get better validation_accuracy, test_accuracy:{"
-                  "0:.2%}".format(test_accuracy))
-            print(
-                "Training finished, the best validation accuracy: {0:.2%} with "
-                "test accuracy: {1:.2%}".format(best_validation_accuracy,
-                                                test_accuracy))
-            writer.close()
+                # Calc the test accuracy.
+                test_accuracy = self.__accuracy.eval({
+                    self.__x: np.reshape(
+                        test_data.images, [test_data_size, 28, 28]),
+                    self.__y: test_data.labels})
+                print("Get better validation_accuracy, test_accuracy:{"
+                      "0:.2%}".format(test_accuracy))
+        print(
+            "Training finished, the best validation accuracy: {0:.2%} with "
+            "test accuracy: {1:.2%}".format(best_validation_accuracy,
+                                            test_accuracy))
+        writer.close()
         return training_accuracys, validation_accuracys, test_accuracy
 
 
