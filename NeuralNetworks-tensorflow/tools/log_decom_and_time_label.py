@@ -19,10 +19,13 @@ for (dir_path, dir_names, files) in os.walk(local_path):
     print("Local dir names:" + str(dir_names))
     print("Local file names:" + str(files))
     for file in files:
+        tmp_dir = os.path.join(dir_path, "tmp")
+        if not os.path.exists(tmp_dir):
+            os.mkdir(tmp_dir)
         if file.endswith(".tar.bz2"):
             file_path = os.path.join(dir_path, file)
             file_name = file.split(".tar")[0]
-            unzip_file_path = os.path.join(dir_path, file_name)
+            unzip_file_path = os.path.join(tmp_dir, file_name)
 
             # Unzip log tar file.
             print("Unzip the {0} to {1} ...".format(file_path, unzip_file_path))
@@ -127,3 +130,9 @@ for (dir_path, dir_names, files) in os.walk(local_path):
             except Exception as e:
                 print(e)
                 continue
+
+        try:
+            os.removedirs(tmp_dir)
+        except Exception as e:
+            print(e)
+            continue
