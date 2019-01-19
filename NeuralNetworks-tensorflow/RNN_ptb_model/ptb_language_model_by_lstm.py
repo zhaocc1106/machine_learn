@@ -27,16 +27,16 @@ class PTBInput(object):
     epoch_size: 2 (epoch_size = (batch_len - 1) // num_step)
 
          ▏←     batch len    →▕
-    ▁   *    *    *    *    *    *
+    ▁    *    *    *    *    *    *
     ↑
          *    *    *    *    *    *
    batch
    size  *    *    *    *    *    *
 
-    ↓   *    *    *    *    *    *
+    ↓    *    *    *    *    *    *
     ▔
-        <----><---->
-          ↑   | ↑
+         <----><---->
+          ↑    | ↑
           The  |The
           input|target
           of   |of
