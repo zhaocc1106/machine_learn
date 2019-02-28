@@ -149,7 +149,9 @@ class DeepQNetwork(object):
         # print("pred_q shape:", str(tf.shape(pred_q)))
 
         # Optimize the loss between target q and predicted q.
-        self.sq_cost = tf.reduce_mean(tf.square(self.target_q - pred_q))
+        self.sq_cost = tf.reduce_mean(tf.square(self.target_q - pred_q),
+                                      name="sq_cost")
+        tf.summary.scalar("sq_cost", self.sq_cost)
         trainer = tf.train.AdamOptimizer(learning_rate=1e-4)
         self.update_model = trainer.minimize(self.sq_cost)
 
@@ -239,10 +241,17 @@ def train():
     """
     game_env = grid_world.GameEnv(size_x=5, size_y=5)
     main_qn = DeepQNetwork(Config.h_size)
+    trainable_vars = tf.trainable_variables()
+    print("main_qn trainable_vars :", trainable_vars)
+    # Collect main_qn vars.
+    for vars in trainable_vars[: 6]:
+        variable_summaries(vars, vars.name.replace("/", "_").replace(":", "_"))
+    # Merge all suammary.
+    merged = tf.summary.merge_all()
     target_qn = DeepQNetwork(Config.h_size)
     init = tf.global_variables_initializer()
     trainable_vars = tf.trainable_variables()
-    print("trainable_vars len", len(trainable_vars))
+    print("target_qn trainable_vars :", trainable_vars[6:])
     target_updater = update_target_graph(trainable_vars,
                                          Config.tvars_update_eta)
 
@@ -263,8 +272,7 @@ def train():
         os.mkdir(Config.path)
 
     with tf.Session() as sess:
-        # writer = tf.summary.FileWriter("./", sess.graph)
-        # writer.close()
+        writer = tf.summary.FileWriter("./", sess.graph)
 
         if Config.load_model == True:
             print("Loading model...")
@@ -273,6 +281,9 @@ def train():
         sess.run(init)  # Initialize all train vars.
         update_target(target_updater, sess)  # Update target_qn.
 
+        r_all_tensor = tf.get_variable(name="r_all", shape=[],
+                                       trainable=False)
+        r_summary = tf.summary.scalar("episode_reward", r_all_tensor)
         for i in range(Config.num_episodes):
             # Save experience of current episode.
             episode_buffer = ExperienceBuffer()
@@ -335,17 +346,46 @@ def train():
                                    2] + Config.discount_fac * double_q
                         # print(np.shape(target_q))
                         # Update the main q network.
-                        cost, _ = sess.run([main_qn.sq_cost,
-                                          main_qn.update_model],
-                                 feed_dict={
-                                     main_qn.scalar_input:
-                                         np.vstack(train_batch[:, 0]),
-                                     main_qn.agent_action:
-                                         train_batch[:, 1],
-                                     main_qn.target_q: target_q
-                                 })
-                        # print("total_steps: {0}, cost:{1}".format(
-                        #     total_steps, cost))
+                        # Collect summary every episode.
+                        if total_steps % Config.max_epi_actions == 0:
+                            run_options = tf.RunOptions(
+                                trace_level=tf.RunOptions.FULL_TRACE)
+                            run_metadata = tf.RunMetadata()
+                            summary, cost, __ = sess.run([merged,
+                                                          main_qn.sq_cost,
+                                                          main_qn.update_model],
+                                                         feed_dict={
+                                                             main_qn.scalar_input:
+                                                                 np.vstack(
+                                                                     train_batch[
+                                                                     :,
+                                                                     0]),
+                                                             main_qn.agent_action:
+                                                                 train_batch[:,
+                                                                 1],
+                                                             main_qn.target_q: target_q
+                                                         },
+                                                         options=run_options,
+                                                         run_metadata=run_metadata)
+                            writer.add_run_metadata(run_metadata, "step%d" %
+                                                    total_steps)
+                            writer.add_summary(summary, total_steps)
+                            print("total_steps: {0}, cost:{1}".format(
+                                total_steps, cost))
+                        else:
+                            cost, _ = sess.run([main_qn.sq_cost,
+                                                main_qn.update_model],
+                                               feed_dict={
+                                                   main_qn.scalar_input:
+                                                       np.vstack(
+                                                           train_batch[
+                                                           :,
+                                                           0]),
+                                                   main_qn.agent_action:
+                                                       train_batch[:,
+                                                       1],
+                                                   main_qn.target_q: target_q
+                                               })
                         # Let target q network learns the main q network with a
                         # very low learning rate.
                         update_target(target_updater, sess)
@@ -353,6 +393,9 @@ def train():
                     break
             # Add episode buffer into total experience buffer.
             experience_buffer.add(episode_buffer.buffer)
+            _ = sess.run(r_all_tensor.assign(r_all))
+            summary = sess.run(r_summary)
+            writer.add_summary(summary, i + 1)
             # Save the total episode reward into r_list.
             r_list.append(r_all)
             # Show rewards per 25 episodes.
@@ -367,6 +410,7 @@ def train():
                 print("Model checkpoint{0} saved".format(i + 1))
         saver.save(sess, Config.path + "/model-" + str(Config.num_episodes)
                    + ".ckpt")
+        writer.close()
         return r_list
 
 
@@ -385,6 +429,26 @@ def plot_rewards(reward_list):
     plt.title("The best reward:{0}".format(np.max(reward_list)))
     plt.legend()
     plt.show()
+
+
+def variable_summaries(vars, name):
+    """Construct summaries of vars, including ``mean``, ``stddev``, ``max``
+    and ``min``.
+
+    Args:
+        vars: The vars.
+        name: The name
+    """
+    with tf.name_scope(name):
+        mean = tf.reduce_mean(vars)
+        tf.summary.scalar("mean", mean)
+
+        with tf.name_scope("stddev"):
+            stddev = tf.sqrt(tf.reduce_mean(tf.square(vars - mean)))
+        tf.summary.scalar("stddev", stddev)
+        tf.summary.scalar("max", tf.reduce_max(vars))
+        tf.summary.scalar("min", tf.reduce_min(vars))
+        tf.summary.histogram(name="histogram", values=vars)
 
 
 if __name__ == "__main__":
