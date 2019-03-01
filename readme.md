@@ -1,4 +1,4 @@
-﻿# 机器学习的各类算法的实现.
+﻿# 机器学习和深度学习的各类算法的实现.
 
 ## 分类算法：
       kNN、DecisionTree、NaiveBayes、SVM、LogisticRegressionClassifier、AdaBoost
