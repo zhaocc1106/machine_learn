@@ -42,7 +42,7 @@
 10. RNN_Word2Vec目录-(使用skip-gram算法实现word2vec)<br>
     * word2vec_by_skip_gram.py-(使用skip-gram算法实现word2vec模型)
 11. tf_learn目录-(tfLearn模块学习和测试)
-    DNN_classifier.py-(学习使用tensorflow的feature_columns和estimator的用法)
+    * DNN_classifier.py-(学习使用tensorflow的feature_columns和estimator的用法)
 11. tools目录-(工具包)<br>
     * bz2_decompress.py-(bz2文件自动检索解压器)
     * image_net_downloader.py-(image_net图片下载器，支持多线程)
