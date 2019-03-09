@@ -1,8 +1,8 @@
 # 深度学习-神经网络-tensorflow实践
 # 目录架构
-1. alex_net_model目录->(AlexNet CNN模型)<br>
-    * alex_net_cnn.py->(构建alex_net网络，分类imageNet网络上的图片以及cifar10图片)
-    * cifar10_input_for_alex_net.py->(将cifar10_input改造成可训练alex_net网络的格式)
+1. alex_net_model目录-(AlexNet CNN模型)<br>
+    * alex_net_cnn.py-(构建alex_net网络，分类imageNet网络上的图片以及cifar10图片)
+    * cifar10_input_for_alex_net.py-(将cifar10_input改造成可训练alex_net网络的格式)
     * constants.py-(常量)
 2. Bi_RNN_model目录-(双向RNN模型)<br>
     * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
