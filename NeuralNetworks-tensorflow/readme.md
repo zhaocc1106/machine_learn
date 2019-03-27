@@ -1,14 +1,17 @@
 # 深度学习-神经网络-tensorflow实践
 # 目录架构
-1. alex_net_model目录->(AlexNet CNN模型)<br>
-    * alex_net_cnn.py->(构建alex_net网络，分类imageNet网络上的图片以及cifar10图片)
-    * cifar10_input_for_alex_net.py->(将cifar10_input改造成可训练alex_net网络的格式)
-    * constants.py-(常量)
-2. Bi_RNN_model目录-(双向RNN模型)<br>
-    * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
-3. cifar10_model目录-(Cifar10 CNN模型)<br>
-    * cifar10.py-(构建分类cifar10图片的cnn网络)
-    * cifar10_cnn.py-(构建分类cifar10图片的cnn网络)
+1. CNN目录-(CNN模型)<br>
+    * alex_net_model目录-(AlexNet CNN模型)<br>
+        * alex_net_cnn.py-(构建alex_net网络，分类imageNet网络上的图片以及cifar10图片)
+        * cifar10_input_for_alex_net.py-(将cifar10_input改造成可训练alex_net网络的格式)
+        * constants.py-(常量)
+    * cifar10_model目录-(Cifar10 CNN模型)<br>
+        * cifar10.py-(构建分类cifar10图片的cnn网络)
+        * cifar10_cnn.py-(构建分类cifar10图片的cnn网络)
+2. datasets_learn目录-(tf.data用法学习)<br>
+3. estimator_learn目录-(Estimator模块学习)
+    * DNN_classifier.py-(学习使用tensorflow的feature_columns和DNN_classifier
+    estimator的用法)
 4. image_net_origin_files目录<br>
     * 从ImageNet下载下来的几个分类图片的urls文件，每个分类大概有1000个图片
     * 下载器会把原始图片保存在该目录
@@ -35,15 +38,16 @@
     * policy_network_for_cart_pole.py-(构建强化学习策略网络模型来玩cart_pole游戏)
     * value_network_for_grid_world.py-(构建强化学习估值网络Deep Q-learning
     network来玩grid_world游戏)
-9. RNN_ptb_model目录-(使用LSTM训练的Ptb 模型)<br>
-    * ptb_language_model_by_lstm.py-(构建LSTM网络训练ptb模型)
-    * reader.py-(words读取者)
-    * ptb_model_tensor_board.png-(tensor board画出ptb model graph图)
-10. RNN_Word2Vec目录-(使用skip-gram算法实现word2vec)<br>
-    * word2vec_by_skip_gram.py-(使用skip-gram算法实现word2vec模型)
-11. tf_learn目录-(tfLearn模块学习和测试)
-    * DNN_classifier.py-(学习使用tensorflow的feature_columns和estimator的用法)
-11. tools目录-(工具包)<br>
+9. RNN目录-(RNN模型)<br>
+    * Bi_RNN_model目录-(双向RNN模型)<br>
+        * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
+    * RNN_ptb_model目录-(使用LSTM训练的Ptb 模型)<br>
+        * ptb_language_model_by_lstm.py-(构建LSTM网络训练ptb模型)
+        * reader.py-(words读取者)
+        * ptb_model_tensor_board.png-(tensor board画出ptb model graph图)
+    * RNN_Word2Vec目录-(使用skip-gram算法实现word2vec)<br>
+        * word2vec_by_skip_gram.py-(使用skip-gram算法实现word2vec模型)
+10. tools目录-(工具包)<br>
     * bz2_decompress.py-(bz2文件自动检索解压器)
     * image_net_downloader.py-(image_net图片下载器，支持多线程)
     * img_net_input.py-(将图片转成一批数组，并进行增强处理，最后发现跑不动，只记录一下思考过程)
@@ -51,7 +55,7 @@
     alex_net模型读取image_net数据时使用的该reader)
     * image_net_tf_records_writer.py-(将image_net图片转成tensor并保存到tfRecords中)
     * words_downloader_and_reader.py-(word2vec使用到的words downloader and reader)
-12. words_data目录-(words_vec模型使用的训练语言数据)<br>
-13. MLP.py-(简单多层全连接神经网络分类器)<br>
-14. auto_encoder.py-（自动编码器）<br>
-15. softmax_regression.py-(根据softmax 回归的简单分类器)<br>
+11. words_data目录-(words_vec模型使用的训练语言数据)<br>
+12. MLP.py-(简单多层全连接神经网络分类器)<br>
+13. auto_encoder.py-（自动编码器）<br>
+14. softmax_regression.py-(根据softmax 回归的简单分类器)<br>
