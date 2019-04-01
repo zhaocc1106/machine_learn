@@ -44,14 +44,16 @@ def download_images(urls_path, save_path, label, n_thread):
     def download(urls, index):
         for url in urls:
             try:
-                print("Download ", url)
+                print("Download {0}: {1}".format(index, url))
                 file_path = save_path + label + "_" + str(index) + ".jpg"
-                req.urlretrieve(url, file_path)
+                # req.urlretrieve(url, file_path)
+                body = req.urlopen(url, timeout=5).read()
+                with open(file_path, 'wb') as file:
+                    file.write(body)
                 print(str(index) + " success!")
                 index += 1
             except Exception as e:
                 print(str(index) + " failed:" + str(e))
-                pass
 
     file = open(urls_path, "r", encoding='UTF-8')
     lines = file.readlines()
@@ -72,8 +74,8 @@ def download_images(urls_path, save_path, label, n_thread):
         threads.append(t)
     # Wait for all threads.
     for t in threads:
-        print("wait threads", str(t))
-        t.join()
+            print("wait threads", str(t))
+            t.join()
     print("Download end.")
     file.close()
 
