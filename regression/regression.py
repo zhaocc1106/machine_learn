@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 def loadDataSet(fileName):
     """
-    从文件中读取测试训练数据以及分类标签数据
+    从文件中读取测试训练数据以及回归标签数据
     :param fileName: 数据文件名
     :return dataMat: 数据矩阵
     :return classLabels: 标签数组
