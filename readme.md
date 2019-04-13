@@ -20,8 +20,3 @@
 
 ## 降噪工具
       PCA、SVD
-
-## github
-      这些代码是从个人github拷贝过来的，所以有编码风格不规范的地方很多导致评级报了很多bug（其实是前期编码风格不好，太多，改不过来）。
-      github链接如下：
-      https://github.com/zhaocc1106/machine_learn
