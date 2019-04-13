@@ -29,7 +29,7 @@ labels = {"bear": 0,
           "giraffe": 7,
           "person": 8,
           "tree": 9}
-tf_records_dir = "../image_net_records_files/"
+tf_records_dir = "/tmp/image_net_records_files/"
 image_net_origin_files_dir = "../image_net_origin_files/"
 useless_image_array = cv2.imread(image_net_origin_files_dir + "bear/bear_14.jpg")
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -139,4 +139,6 @@ if __name__ == "__main__":
     # tf_records_writer.close()
     # load_data_from_tf_records(tf_records_dir + "train.tfRecords")
 
+    if not os.path.exists(tf_records_dir):
+        os.mkdir(tf_records_dir)
     save_all_image_files_into_tf_records(image_net_origin_files_dir, tf_records_dir)

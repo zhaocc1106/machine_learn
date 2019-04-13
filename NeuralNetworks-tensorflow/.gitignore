@@ -1,3 +1,19 @@
+# Origin image files.
 image_net_origin_files/*/*.jpg
+
+# Ptb data files.
+RNN/RNN_ptb_model/simple-examples/*
+
+# Tensorboard files.
+*events.out.tfevents*
+
+# Model saver files.
+*checkpoint
+*.ckpt*
+
+# Data files.
 *.tfRecords
-RNN_ptb_model/simple-examples/*
+*.npy
+
+# Estimators model saver.
+model_saver/estimators

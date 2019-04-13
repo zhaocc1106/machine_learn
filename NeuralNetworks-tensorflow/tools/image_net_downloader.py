@@ -16,6 +16,20 @@ import shutil
 image_data_dir = "../image_net_origin_files/"
 
 
+def set_proxy():
+    """Set http https ftp proxy. The proxy ip and port is yours proxy. I use
+    Bandwagon as proxy. Many pictures can't access if not set proxy.
+
+    Returns:
+
+    """
+    handler = req.ProxyHandler({'http': '127.0.0.1:1080',
+                                'https': '127.0.0.1:1080',
+                                'ftp': '127.0.0.1:1080'})
+    opener = req.build_opener(handler)
+    req.install_opener(opener)
+
+
 def download_images(urls_path, save_path, label, n_thread):
     """Download images by urls file.
 
@@ -30,14 +44,16 @@ def download_images(urls_path, save_path, label, n_thread):
     def download(urls, index):
         for url in urls:
             try:
-                print("Download ", index)
+                print("Download {0}: {1}".format(index, url))
                 file_path = save_path + label + "_" + str(index) + ".jpg"
-                req.urlretrieve(url, file_path)
+                # req.urlretrieve(url, file_path)
+                body = req.urlopen(url, timeout=5).read()
+                with open(file_path, 'wb') as file:
+                    file.write(body)
                 print(str(index) + " success!")
                 index += 1
             except Exception as e:
                 print(str(index) + " failed:" + str(e))
-                pass
 
     file = open(urls_path, "r", encoding='UTF-8')
     lines = file.readlines()
@@ -58,8 +74,8 @@ def download_images(urls_path, save_path, label, n_thread):
         threads.append(t)
     # Wait for all threads.
     for t in threads:
-        print("wait threads", str(t))
-        t.join()
+            print("wait threads", str(t))
+            t.join()
     print("Download end.")
     file.close()
 
@@ -88,4 +104,5 @@ def download_all(urls_dir_path, n_thread):
 
 
 if __name__ == "__main__":
+    set_proxy() # Over the wall.
     download_all(image_data_dir, 64) # Use 64 treads to accelerate the download.

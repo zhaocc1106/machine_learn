@@ -1,8 +1,8 @@
 #
 # Copyright (c) 2019 Baidu.com, Inc. All Rights Reserved
 #
-"""The policy network for reinforcement learning.
-
+"""
+Train a policy network to play cart pole game.
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    19-1-14 上午9:11
@@ -22,7 +22,7 @@ env = gym.make("CartPole-v0")
 class Config(object):
     """The policy network config.
 
-    Args:
+    Attributes:
         hidden_size: The hidden layer size.
         batch_size: The batch size.
         learning_rate: The learning rate.
@@ -67,7 +67,7 @@ def random_policy():
     return mean_reward_sum
 
 
-class policy_network(object):
+class PolicyNetwork(object):
 
     def __init__(self):
         """Init the policy network and infer the tensorflow graph of the
@@ -218,7 +218,7 @@ class policy_network(object):
                                                     self.__advantages:
                                                         discounted_reward})
                     for i, grad in enumerate(new_grads):
-                        grad_buffer[i] += grad  # Calc the total grad of batch.
+                        grad_buffer[i] += grad  # Calc the total grad  of batch.
 
                     if episode_num % Config.batch_size == 0:
                         # Update variables every batch.
@@ -243,5 +243,5 @@ class policy_network(object):
 
 if __name__ == "__main__":
     # random_policy()
-    network = policy_network()
+    network = PolicyNetwork()
     network.train(10000, 200)
