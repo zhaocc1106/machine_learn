@@ -86,7 +86,7 @@ def showClassifer(dataArr, labelArr, b, alphas, C):
     data_plus = []  # 正类型数据样本
     data_minus = []  # 负类型数据样本
     for i in range(len(dataMat)):
-        if classLabels[i] == 1:
+        if labelArr[i] == 1:
             data_plus.append(dataMat[i])
         else:
             data_minus.append(dataMat[i])
@@ -118,7 +118,7 @@ def showClassifer(dataArr, labelArr, b, alphas, C):
     print("support vector:")
     for i in range(100):
         if alphas[i] > 0.0 and alphas[i] < C:
-            print(str(dataArr[i]), " ", str(classLabels[i]))
+            print(str(dataArr[i]), " ", str(labelArr[i]))
             x = dataArr[i][0]
             y = dataArr[i][1]
             plt.scatter([x], [y], s=150, c='none', alpha=0.7, linewidth=1.5,

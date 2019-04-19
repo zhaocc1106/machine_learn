@@ -9,9 +9,13 @@
         * cifar10.py-(构建分类cifar10图片的cnn网络)
         * cifar10_cnn.py-(构建分类cifar10图片的cnn网络)
 2. datasets_learn目录-(tf.data用法学习)<br>
+    * practice.py-(实践测试tf.data的用法，包括迭代器使用、解析tfRecords数据、解析csv数据、解析image数据等)
 3. estimator_learn目录-(Estimator模块学习)
+    * census_data_download.py-(下载census_data)
     * DNN_classifier.py-(学习使用tensorflow的feature_columns和DNN_classifier
     estimator的用法)
+    * DNN_linear_combined_classifier.py-(使用tf.estimator.DNNLinearCombinedClassifier
+    分类census数据)
 4. image_net_origin_files目录<br>
     * 从ImageNet下载下来的几个分类图片的urls文件，每个分类大概有1000个图片
     * 下载器会把原始图片保存在该目录
