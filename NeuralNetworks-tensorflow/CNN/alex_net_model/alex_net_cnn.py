@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import CNN.alex_net_model.cifar10_input_for_alex_net as cifar10_input
 import CNN.alex_net_model.constants as constants
+import CNN.cifar10_model.cifar10 as cifar10
 from PIL import Image
 
 data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
@@ -56,6 +57,7 @@ def load_image_net_datas(batch_size):
     #                                                     batch_size)
 
     # Load the cifar10 data.
+    cifar10.maybe_download_and_extract()
     image_train, label_train = cifar10_input.distorted_inputs(data_dir, batch_size)
     image_test, label_test = cifar10_input.inputs(True, data_dir, batch_size)
     return image_train, label_train, image_test, label_test
