@@ -19,8 +19,8 @@ Sigmoid函数的输入记为z，由下面公式得出：<br>
 
 ## 通过极大似然估计推导梯度函数
 借用李航博士写的《统计学习方法》中6.1节内容：<br>
-![reference01](http://icode.baidu.com/repos/baidu/hec-system-sw/Machine-Learning/blob/master:LogisticRegressionClassifier/images/reference01.png)<br>
-![reference02](http://icode.baidu.com/repos/baidu/hec-system-sw/Machine-Learning/blob/master:LogisticRegressionClassifier/images/reference02.png)<br>
+![reference01](https://github.com/zhaocc1106/machine_learn/blob/master/LogisticRegressionClassifier/images/reference01.png)<br>
+![reference02](https://github.com/zhaocc1106/machine_learn/blob/master/LogisticRegressionClassifier/images/reference02.png)<br>
 由上述书籍的详细推导，得出我们的对数似然函数如下:<br>
     L(w) = (i:1~N)∑ [yi(w・xi) - log(1+exp(w・xi))]　　　　　其中xi,yi为第i个样本。<br>
  对L(w)求梯度▽，即对所有的w求导数，能够得到：<br>
