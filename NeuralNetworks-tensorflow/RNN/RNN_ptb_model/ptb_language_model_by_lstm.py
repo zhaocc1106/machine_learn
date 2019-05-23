@@ -97,12 +97,13 @@ class PTBModel(object):
             return tf.nn.rnn_cell.BasicLSTMCell(num_units=hidden_size,
                                                  forget_bias=0.0,
                                                  state_is_tuple=True)
-        attn_cell = lstm_cell
         if is_training and config.keep_prob < 1:
             # Define dropout layer.
             def attn_cell():
                 return tf.nn.rnn_cell.DropoutWrapper(cell=lstm_cell(),
                                                       output_keep_prob=config.keep_prob)
+        else:
+            attn_cell = lstm_cell
         # Define multiple lstm cell.
         cell = tf.nn.rnn_cell.MultiRNNCell(cells=
                                             [attn_cell() for _ in range(
