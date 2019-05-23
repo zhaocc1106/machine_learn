@@ -8,6 +8,9 @@
     * cifar10_model目录-(Cifar10 CNN模型)<br>
         * cifar10.py-(构建分类cifar10图片的cnn网络)
         * cifar10_cnn.py-(构建分类cifar10图片的cnn网络)
+    * res_net_model目录-(resnet 模型)<br>
+        * resnet.py-(构建resnet网络模型，分类imageNet网络上的图片以及cifar10图片)
+        * cifar10_input_for_resnet.py-(将cifar10_input改造成可训练resnet网络的格式)
 2. datasets_learn目录-(tf.data用法学习)<br>
     * practice.py-(实践测试tf.data的用法，包括迭代器使用、解析tfRecords数据、解析csv数据、解析image数据等)
 3. estimator_learn目录-(Estimator模块学习)
