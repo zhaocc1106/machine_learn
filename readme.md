@@ -18,5 +18,8 @@
 ## 深度学习
       NeuralNetworks、NeuralNetworks-tensorflow
 
+## 目标检测
+      [faster r-cnn模型](https://github.com/zhaocc1106/tf-faster-rcnn)
+      
 ## 降噪工具
       PCA、SVD
