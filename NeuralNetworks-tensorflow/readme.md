@@ -34,6 +34,10 @@
     (cifar10数据训练alex_net网络150个epochs)
     * cifar10_train_alex_net_top_1_300_epochs.png-
     (cifar10数据训练alex_net网络300个epochs)
+    * cifar10_train_pre-trained_resnet101_top_1_50_epochs.png-
+    (cifar10数据训练已经预训练过的resnet101模型50个epochs)
+    * cifar10_train_resnet101_top_1_150_epochs.png-
+    (cifar10数据训练resnet101模型150个epochs)
     * image_net_train_alex_net_top_1.png-(image_net数据训练alex_net网络)
     * MLP.png-(mnist训练一个多层全连接网络模型)
     * reinforcement_learning_value_network_for_grid_world.png-
