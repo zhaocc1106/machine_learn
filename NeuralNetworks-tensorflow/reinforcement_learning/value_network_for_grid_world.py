@@ -272,7 +272,12 @@ def train():
         os.mkdir(Config.path)
 
     with tf.Session() as sess:
-        writer = tf.summary.FileWriter("./", sess.graph)
+        # Create tensorboard writer.
+        tensorboad_path = os.path.join("../tensorboard/value_network_model",
+                                       time.strftime('%Y-%m-%d-%H-%M'))
+        if not os.path.exists(tensorboad_path):
+            os.makedirs(tensorboad_path)
+        writer = tf.summary.FileWriter(tensorboad_path, sess.graph)
 
         if Config.load_model == True:
             print("Loading model...")

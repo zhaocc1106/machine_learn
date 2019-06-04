@@ -9,6 +9,7 @@ Date:    2018/12/21 9:36
 """
 # Common libs.
 import time
+import os
 
 # 3rd-part libs.
 import tensorflow as tf
@@ -212,7 +213,13 @@ class BiRNN(object):
         """
         print("SGD")
         session = tf.InteractiveSession()
-        writer = tf.summary.FileWriter("./", session.graph)
+
+        # Create tensorboard writer.
+        tensorboad_path = os.path.join("../../tensorboard/bi_rnn_model",
+                                       time.strftime('%Y-%m-%d-%H-%M'))
+        if not os.path.exists(tensorboad_path):
+            os.makedirs(tensorboad_path)
+        writer = tf.summary.FileWriter(tensorboad_path, session.graph)
         tf.global_variables_initializer().run(session=session)
 
         training_data = mnist.train
