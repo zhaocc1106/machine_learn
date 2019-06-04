@@ -1,9 +1,9 @@
 # 机器学习和深度学习的各类算法的实现.
 
 ## 快速开始
-   Anaconda（python开发环境集成管理工具），IDE使用Pycharm，每一个目录当作一个pycharm工程。
-   Anaconda使用的版本是Anaconda3-5.1.0，用到tensorflow的工程，通过如下命令安装gpu版本或非gpu版本：
-   conda install tensorflow-gpu gpu版本
+   Anaconda（python开发环境集成管理工具），IDE使用Pycharm，每一个目录当作一个pycharm工程。<br>
+   Anaconda使用的版本是Anaconda3-5.1.0，用到tensorflow的工程，通过如下命令安装gpu版本或非gpu版本：<br>
+   conda install tensorflow-gpu gpu版本<br>
    conda install tensorflow 非gpu版本
 
 ## 分类算法
