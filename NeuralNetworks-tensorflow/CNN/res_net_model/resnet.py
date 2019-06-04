@@ -11,43 +11,52 @@ Date:    2019/5/19 下午6:31
 # common libs.
 import os
 import time
-import pprint
 import math
 
 # 3rd-part libs.
 import numpy as np
 import tensorflow as tf
+from tensorflow.python import pywrap_tensorflow
 import tensorflow.contrib.slim as slim
 import tensorflow.contrib.slim.nets as slim_nets
 import CNN.cifar10_model.cifar10 as cifar10
 import CNN.res_net_model.cifar10_input_for_resnet as cifar10_input
+import CNN.res_net_model.constants as constants
 import matplotlib.pyplot as plt
+import tools.img_net_tf_records_reader as img_net_reader
 
 data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
+# wget http://download.tensorflow.org/models/resnet_v1_101_2016_08_28.tar.gz
 pre_trained_ckpt = "../../model_saver/resnet_model/pre-trained_model/resnet_v1_101.ckpt"
 
 
-def load_image_datas(batch_size):
+def load_image_datas(batch_size, data_type="cifar10"):
     """Load image net data from image net input.
 
     Args:
         batch_size: The mini batch size.
+        data_type: ```cifar10``` or ```imagenet```.
 
     Returns:
         Training and test mini batch datas.
     """
-    # Load the ImageNet data.
-    # image_train, label_train = img_net_reader.load_distorted_inputs(
-    #                                                       constants.tf_records_dir,
-    #                                                       batch_size)
-    # image_test, label_test = img_net_reader.load_inputs(True, constants.tf_records_dir,
-    #                                                     batch_size)
-
-    # Load the cifar10 data.
-    cifar10.maybe_download_and_extract()
-    image_train, label_train = cifar10_input.distorted_inputs(data_dir,
-                                                              batch_size)
-    image_test, label_test = cifar10_input.inputs(True, data_dir, batch_size)
+    if data_type == "imagenet":
+        # Load the ImageNet data. 5898 training images and 644 test images.
+        # Execute tools.image_net_downloader.py and
+        # tools.img_net_tf_records_writer.py before use it.
+        image_train, label_train = img_net_reader.load_distorted_inputs(
+            constants.tf_records_dir,
+            batch_size)
+        image_test, label_test = img_net_reader.load_inputs(True,
+                                                            constants.tf_records_dir,
+                                                            batch_size)
+    elif data_type == "cifar10":
+        # Load the cifar10 data.
+        cifar10.maybe_download_and_extract()
+        image_train, label_train = cifar10_input.distorted_inputs(data_dir,
+                                                                  batch_size)
+        image_test, label_test = cifar10_input.inputs(True, data_dir,
+                                                      batch_size)
     return image_train, label_train, image_test, label_test
 
 
@@ -106,29 +115,70 @@ class Network(object):
         Returns:
             training operation and top 1 prediction operation.
         """
-
+        # Add resnet layer.
         if self.arch == "101":
             with slim.arg_scope(slim_nets.resnet_v1.resnet_arg_scope()):
                 net, end_points = slim_nets.resnet_v1.resnet_v1_101(
                     inputs=self.images,
-                    num_classes=10,
+                    # num_classes=10,
                     is_training=is_training,
                 )
-        print("net:")
-        pprint.pprint(net)
-        print("end_points:")
-        pprint.pprint(end_points)
+
+        # Add full connected layer.
+        initializer = tf.random_normal_initializer(mean=0.0, stddev=0.01)
+        cls_score = slim.fully_connected(net,
+                                         10,
+                                         weights_initializer=initializer,
+                                         trainable=is_training,
+                                         activation_fn=None,
+                                         scope='cls_score')
+
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(
             labels=self.labels,
-            logits=tf.reshape(net, shape=[self.mini_batch, 10]),
+            logits=tf.reshape(cls_score, shape=[self.mini_batch, 10]),
             name="cross_entropy_per_example")
         loss = tf.reduce_mean(cross_entropy, name="cross_entropy")
         # Use adam optimizer.
         train_op = tf.train.MomentumOptimizer(self.eta, 0.9).minimize(
             loss=loss)
-        top_k_op = tf.nn.in_top_k(tf.reshape(net, shape=[self.mini_batch, 10]),
-                                  self.labels, 1)
+        top_k_op = tf.nn.in_top_k(
+            tf.reshape(cls_score, shape=[self.mini_batch, 10]),
+            self.labels, 1)
         return loss, train_op, top_k_op
+
+    def __model_restore(self, sess, pre_trained_ckpt):
+        """Restore pre-trained model.
+
+        Args:
+            sess: The session.
+            pre_trained_ckpt: The pre-trained model path.
+        """
+        try:
+            reader = pywrap_tensorflow.NewCheckpointReader(pre_trained_ckpt)
+            var_to_shape_map = reader.get_variable_to_shape_map()
+        except Exception as e:  # pylint: disable=broad-except
+            print(str(e))
+            if "corrupted compressed block contents" in str(e):
+                print(
+                    "It's likely that your checkpoint file has been compressed "
+                    "with SNAPPY.")
+            return
+
+        if var_to_shape_map is not None and len(var_to_shape_map) != 0:
+            print('Loading initial model weights from {:s}'.format(
+                pre_trained_ckpt))
+            variables = tf.global_variables()
+            # Get variables can restored.
+            variables_to_restore = []
+            for v in variables:
+                if v.name.split(':')[0] in var_to_shape_map:
+                    print('Variables restored: %s' % v.name)
+                    variables_to_restore.append(v)
+
+            # Restore variables.
+            restorer = tf.train.Saver(variables_to_restore)
+            restorer.restore(sess, pre_trained_ckpt)
+            print("Model loaded.")
 
     def __SGD(self, input_func, eta, epochs, epoch_train_size,
               test_sample_size=1000, pre_trained_ckpt=None):
@@ -162,10 +212,16 @@ class Network(object):
         accuracy_summary = tf.summary.scalar("test_accuracy",
                                              test_accuracy_tensor)
 
+        # Initialize all variables firstly.
         tf.global_variables_initializer().run()
 
         # Create tensorboard writer.
-        writer = tf.summary.FileWriter("./", sess.graph)
+        tensorboad_path = os.path.join("../../tensorboard/resnet_model",
+                                       "res" + self.arch,
+                                       time.strftime('%Y-%m-%d-%H-%M'))
+        if  not os.path.exists(tensorboad_path):
+            os.makedirs(tensorboad_path)
+        writer = tf.summary.FileWriter(tensorboad_path, sess.graph)
 
         # model saver.
         saver_path = os.path.join("../../model_saver/resnet_model", "res" +
@@ -175,9 +231,9 @@ class Network(object):
             os.makedirs(saver_path)
         model_saver = tf.train.Saver()
 
-        # load previous checkpoint.
+        # load previous checkpoint if has pre-trained model.
         if pre_trained_ckpt is not None:
-            model_saver.restore(sess=sess, save_path=pre_trained_ckpt)
+            self.__model_restore(sess, pre_trained_ckpt)
 
         # Calc the steps of every epoch.
         every_epoch_steps = epoch_train_size / self.mini_batch
@@ -283,10 +339,10 @@ if __name__ == "__main__":
     network = Network("101")
     test_accuracys = network.train(mini_batch=20,
                                    input_func=load_image_datas,
-                                   eta=1e-8,
-                                   epochs=50,
+                                   eta=1e-3,
+                                   epochs=150,
                                    epoch_train_size=40000,
                                    test_sample_size=1000,
-                                   pre_trained_ckpt="../../model_saver/resnet_model/res101/2019-05-21-21-34/resnet.ckpt-300000")
-
+                                   # pre_trained_ckpt=pre_trained_ckpt
+                                   )
     plot_accuracy(test_accuracys)

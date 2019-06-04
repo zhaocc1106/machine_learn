@@ -35,7 +35,6 @@ useless_image_array = cv2.imread(image_net_origin_files_dir + "bear/bear_14.jpg"
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 IMAGE_SIZE = 300
 
-
 def save_data_into_tf_records(image_file, image_label, tf_records_writer):
     """Parse image file and save the image data and label into tfRecord file.
 
@@ -43,13 +42,16 @@ def save_data_into_tf_records(image_file, image_label, tf_records_writer):
         image_file: The image file path.
         image_label: The image label.
         tf_records_writer: The tfRecords writer.
+
+    Returns:
+        if the image is useful.
     """
     try:
         img = Image.open(image_file)
     except OSError as e:
         print(e)
         print("Error image " + image_file)
-        return
+        return False
     # Unify resolution to 300 * 300.
     img = np.array(img.resize((IMAGE_SIZE, IMAGE_SIZE)))
     # img = np.array(img)
@@ -57,17 +59,17 @@ def save_data_into_tf_records(image_file, image_label, tf_records_writer):
     # Check if the image is rgb image.
     if len(img.shape) != 3 or img.shape[2] != 3:
         print("Not rgb image " + image_file)
-        return
+        return False
         # Check if the image is useless.
     same = useless_image_array == img
     if type(same) == np.ndarray:
         if (useless_image_array == img).all():
             print("Useless image. " + image_file)
-            return
+            return False
     elif type(same) == bool:
         if same:
             print("Useless image. " + image_file)
-            return
+            return False
 
     img_raw = img.tobytes()
     example = tf.train.Example(features=tf.train.Features(feature={
@@ -83,6 +85,7 @@ def save_data_into_tf_records(image_file, image_label, tf_records_writer):
             value=[img.shape[2]]))
     }))
     tf_records_writer.write(example.SerializeToString())
+    return True
 
 
 def save_all_image_files_into_tf_records(image_dir, tf_records_dir):
@@ -114,22 +117,32 @@ def save_all_image_files_into_tf_records(image_dir, tf_records_dir):
     # Save all training image files into train.tfRecords
     tf_records_writer = tf.python_io.TFRecordWriter(
         tf_records_dir + "train.tfRecords")
+
+    training_images_size = 0
     for training_file in training_files:
         label_name = training_file.split("_")[0]
         image_label = labels[label_name]
         image_path = image_net_origin_files_dir + label_name + "/" + training_file
-        save_data_into_tf_records(image_path, image_label, tf_records_writer)
+        if save_data_into_tf_records(image_path, image_label,
+                                     tf_records_writer):
+            training_images_size += 1
     tf_records_writer.close()
 
     # Save all test image files into test.tfRecords
+    test_images_size = 0
     tf_records_writer = tf.python_io.TFRecordWriter(
         tf_records_dir + "test.tfRecords")
     for test_file in test_files:
         label_name = test_file.split("_")[0]
         image_label = labels[label_name]
         image_path = image_net_origin_files_dir + label_name + "/" + test_file
-        save_data_into_tf_records(image_path, image_label, tf_records_writer)
+        if save_data_into_tf_records(image_path, image_label,
+                                     tf_records_writer):
+            test_images_size +=1
     tf_records_writer.close()
+
+    print("Save completely with {0} training images and {1} test "
+          "images".format(training_images_size, test_images_size))
 
 
 if __name__ == "__main__":
