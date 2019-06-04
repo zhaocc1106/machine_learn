@@ -18,4 +18,4 @@ labels = {0: "bear",
           8: "person",
           9: "tree"}
 IMAGE_SIZE = 224
-tf_records_dir = "../../image_net_records_files/"
+tf_records_dir = "/tmp/image_net_records_files/"
