@@ -423,6 +423,59 @@ def load_images_with_py_func_test(sess):
             break
 
 
+def load_text_test(sess):
+    """ Load text file with tab split.
+
+    Args:
+        sess: The session.
+    """
+    batch_size = 10
+    shuffle = True
+    num_epochs = 5
+    _COLUMNS = ['x', 'y', 'label']
+    _NUM_EXAMPLE = {'train': 100, 'test': 100}
+    data_file = './testSet.txt'
+
+    assert tf.gfile.Exists(data_file), ('%s not found.' % data_file)
+
+    def parse_text(line):
+        # Split line with tab.
+        columns = tf.string_split([line], "\t").values
+        # String to number.
+        columns = tf.string_to_number(columns)
+        # Convert to dictionary.
+        feature_dict = dict(
+            {_COLUMNS[i]: columns[i] for i in range(len(_COLUMNS))})
+        # Pop label column.
+        label = feature_dict.pop("label")
+        return feature_dict, label
+
+    dataset = tf.data.TextLineDataset(data_file)
+    dataset = dataset.map(map_func=parse_text)
+    if shuffle:
+        dataset = dataset.shuffle(buffer_size=_NUM_EXAMPLE['train'], seed=10)
+    dataset = dataset.repeat(num_epochs)
+    dataset = dataset.batch(batch_size)
+
+    # Create iterator
+    iterator = dataset.make_initializable_iterator()
+    next_element = iterator.get_next()
+
+    # Run initializer
+    sess.run(iterator.initializer)
+
+    # Iter
+    while True:
+        try:
+            print('next element:')
+            feature_columns, label = sess.run(next_element)
+            print('feature_columns: ', str(feature_columns))
+            print('label: ', str(label))
+        except tf.errors.OutOfRangeError:
+            print('out of range.')
+            break
+
+
 if __name__ == "__main__":
     sess = tf.InteractiveSession()
     # one_shot_iterator_test(sess) # Test one shot iterator.
@@ -472,4 +525,7 @@ if __name__ == "__main__":
     # load_image_files_test(sess)
 
     # Test load image files with py_func.
-    load_images_with_py_func_test(sess)
+    # load_images_with_py_func_test(sess)
+
+    # Test load pure text files.
+    load_text_test(sess)
