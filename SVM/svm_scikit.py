@@ -69,13 +69,14 @@ def plot_contours(ax, clf, xx, yy, **params):
     return out
 
 
-def show_best_fit_linear_clf(feature_arr, label_arr, weights, title):
-    """Show the best fit linear classifier.
+def show_best_fit_linear_clf(feature_arr, label_arr, clf, title):
+    """Show the best fit linear classifier and maximum margin separating
+    hyperplane.
 
     Args:
         feature_arr: The feature array.
         label_arr: The label array.
-        weights: The weights of x, y and bias. [bias_w, x_w, y_w]
+        clf: The classifier.
         title: The image title.
 
     Returns:
@@ -102,10 +103,33 @@ def show_best_fit_linear_clf(feature_arr, label_arr, weights, title):
     ax.scatter(xcord1, ycord1, s=30, c='red', marker='s', label="正样本")
     ax.scatter(xcord2, ycord2, s=30, c='green', label="负样本")
 
+    # Get the range of x and y
+    xlim = ax.get_xlim()
+    ylim = ax.get_ylim()
+    # print("xlim: {}, ylim: {}".format(xlim, ylim))
+
+    # Create grid.
+    xx = np.linspace(xlim[0], xlim[1], 50)
+    yy = np.linspace(ylim[0], ylim[1], 50)
+    XX, YY = np.meshgrid(xx, yy)
+    xy = np.vstack([XX.ravel(), YY.ravel()]).T
+
+    # Calc the predict label.
+    label = clf.decision_function(xy).reshape(XX.shape)
+
+    # Plot the decision boundary and margins.
+    ax.contour(XX, YY, label, colors="k", levels=[-1, 0, 1], alpha=0.5,
+               linestyles=['--', '-', '--'])
+    # plot support vectors
+    ax.scatter(clf.support_vectors_[:, 0], clf.support_vectors_[:, 1], s=100,
+               linewidth=1, facecolors='none', edgecolors='k')
+
     # Plot classifier line.
-    x = np.arange(-5.0, 10.0, 0.1)
-    y = (-weights[0] - weights[1] * x) / weights[2]
-    ax.plot(x, y.transpose(), label="最佳分割线")
+    # x = np.arange(-5.0, 10.0, 0.1)
+    # y = (-weights[0] - weights[1] * x) / weights[2]
+    # ax.plot(x, y.transpose(), label="最佳分割线")
+
+
     plt.xlabel('X1')
     plt.ylabel('X2')
     plt.title(title)
@@ -215,11 +239,12 @@ def linear_svm_fit(feature_arr, label_arr):
     Returns:
         The weights of x, y and bias. [bias_w, x_w, y_w]
     """
-    svc = svm.LinearSVC()
+    # svc = svm.LinearSVC()
+    svc = svm.SVC(kernel="linear", C=1000)
     svc.fit(feature_arr, label_arr)
-    weights = svc.intercept_.tolist()
-    weights.extend(svc.coef_[0])
-    return weights
+    # weights = svc.intercept_.tolist()
+    # weights.extend(svc.coef_[0])
+    return svc
 
 
 def nonlinear_svm_fit_and_test(train_feature_arr, train_label_arr,
@@ -251,8 +276,8 @@ def nonlinear_svm_fit_and_test(train_feature_arr, train_label_arr,
 if __name__ == "__main__":
     # Linear svm.
     feature_arr, label_arr = load_data_file("testSet.txt")
-    weights = linear_svm_fit(feature_arr, label_arr)
-    show_best_fit_linear_clf(feature_arr, label_arr, weights, "线性svm")
+    clf = linear_svm_fit(feature_arr, label_arr)
+    show_best_fit_linear_clf(feature_arr, label_arr, clf, "线性svm与最大间隔分割超平面")
 
     # nonlinear svm.
     train_feature_arr, train_label_arr = load_data_file("testSetRBF.txt")
