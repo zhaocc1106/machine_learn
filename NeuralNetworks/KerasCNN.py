@@ -63,6 +63,14 @@ def trainKerasCNN(trainX, trainY, testX, testY):
                   metrics=['accuracy'])  # 在训练和测试时需要评估的度量
 
     def learning_rate_scheduler(epoch):
+        """The learning rate scheduler function.
+
+        Args:
+            epoch: Current epoch.
+
+        Returns:
+            The learning rate.
+        """
         print("learning_rate_scheduler epoch:", epoch)
         return 1e-3
 
