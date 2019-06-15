@@ -8,12 +8,21 @@ The use of keras CNN.
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2018/9/5 19:03
 """
+
+# common libs.
+import os
+import shutil
+
+# 3rd-part libs.
 from numpy import *
 import keras
 from keras.datasets import mnist
 from keras.layers import Dense, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 from keras.models import Sequential
+
+MODEL_PATH = "/tmp/kerasCNN/"
+SAVER_PATH = "/tmp/kerasCNN/model_saver"
 
 
 def trainKerasCNN(trainX, trainY, testX, testY):
@@ -40,7 +49,7 @@ def trainKerasCNN(trainX, trainY, testX, testY):
 
     model = Sequential()  # 创建序贯模型
     model.add(Conv2D(32, kernel_size=(5, 5), strides=(1, 1),
-                     activation='relu',
+                     activation='relu', input_shape=[28, 28, 1]
                      ))  # 添加一个卷积层, 32个卷积核，激活函数用relu
     model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))  # 添加一个max pool层
     model.add(Conv2D(64, (5, 5), activation="relu"))  # 添加第二个卷积层
@@ -53,13 +62,56 @@ def trainKerasCNN(trainX, trainY, testX, testY):
                   optimizer=keras.optimizers.Adam(),  # 使用Adam优化器
                   metrics=['accuracy'])  # 在训练和测试时需要评估的度量
 
+    def learning_rate_scheduler(epoch):
+        print("learning_rate_scheduler epoch:", epoch)
+        return 1e-3
+
+    callbacks = [
+        # Model saver callback.
+        keras.callbacks.ModelCheckpoint(filepath=SAVER_PATH),
+
+        # Learning rate scheduler.
+        keras.callbacks.LearningRateScheduler(learning_rate_scheduler,
+                                              verbose=1),
+
+        # Tensorboard callback.
+        keras.callbacks.TensorBoard(log_dir=MODEL_PATH)
+    ]
+
+    if os.path.exists(MODEL_PATH):
+        shutil.rmtree(MODEL_PATH)
+
     model.fit(trainX,  # 输入数据列表
               trainY,  # 输入标签列表
               batch_size=batchSize,  # 梯度更新时样本数
               epochs=epochs,  # 训练轮数
               verbose=1,  # log等级
-              validation_data=(testX, testY)  # 测试数据与标签
+              validation_data=(testX, testY),  # 测试数据与标签
+              callbacks=callbacks  # 设置一些回调
               )
+
+    """
+    # 使用dataset 数据集作为输入，使用fit_generator训练模型
+    dataset = tf.data.Dataset.from_tensor_slices((trainX, trainY))
+    dataset = dataset.batch(batchSize)
+    dataset = dataset.repeat()
+    iterator = dataset.make_initializable_iterator()
+    next_element = iterator.get_next()
+    sess = tf.InteractiveSession()
+    sess.run(iterator.initializer)
+
+    def _input_func(sess, next_element):
+        while True:
+            val = sess.run(next_element)
+            yield val
+
+    steps_per_epoch = trainX.shape[0] / batchSize
+    model.fit_generator(_input_func(sess, next_element),
+                        epochs=epochs,
+                        steps_per_epoch=steps_per_epoch,
+                        verbose=1,
+                        validation_data=(testX, testY))
+    """
 
     score = model.evaluate(testX, testY, verbose=0)  # 评估模型
     print('Test loss:', score[0])
