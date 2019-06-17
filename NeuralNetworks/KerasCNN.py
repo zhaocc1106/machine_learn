@@ -82,9 +82,10 @@ def train_keras_cnn(trainX, trainY, testX, testY):
     trainY = tf.keras.utils.to_categorical(trainY, num_class)
     testY = tf.keras.utils.to_categorical(testY, num_class)
 
-    # 创建分布式计算策略，选择镜像分布式策略，即将batch平均分成N（gpu的个数）份
-    # 实测需要把tensorflow-gpu版本升级到1.14，使用pip install tf-nightly-gpu命令
-    # 最终版本为Python(3.6.8) + tensorflow-gpu(1.14.1-dev20190617)
+    # 创建分布式计算策略，选择镜像分布式策略，即将batch平均分成N（gpu的个数）份。
+    # 实测需要把tensorflow-gpu版本升级到tf-nightly-gpu(1.14)，使用pip install
+    # tf-nightly-gpu命令。
+    # 最终版本为Python(3.6.8) + tf-nightly-gpu(1.14.1-dev20190617)
     mirrored_strategy = tf.distribute.MirroredStrategy()
 
     # 计算所有gpu上batch size总大小
