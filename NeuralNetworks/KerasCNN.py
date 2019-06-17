@@ -22,6 +22,44 @@ MODEL_PATH = "/tmp/kerasCNN/"
 SAVER_PATH = "/tmp/kerasCNN/model_saver.h5"
 
 
+def create_network(mirrored_strategy, num_class):
+    """创建网络模型
+
+    Args:
+        mirrored_strategy: 分布式计算策略
+        num_class: 类型的个数
+
+    Returns:
+        创建好的网络模型
+    """
+    with mirrored_strategy.scope():
+        # 创建 keras 序贯模型
+        model = tf.keras.models.Sequential()
+        # 添加一个卷积层, 32个卷积核，激活函数用relu
+        model.add(tf.keras.layers.Conv2D(32, kernel_size=(5, 5), strides=(1, 1),
+                                         activation='relu',
+                                         input_shape=[28, 28, 1]
+                                         ))
+        # 添加一个max pool层
+        model.add(
+            tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+        # 添加第二个卷积层
+        model.add(tf.keras.layers.Conv2D(64, (5, 5), activation="relu"))
+        # 添加第二个max pool层
+        model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        # 添加flatten层
+        model.add(tf.keras.layers.Flatten())
+        # 添加完全连接层，1000个nn，使用relu激活函数
+        model.add(tf.keras.layers.Dense(1000, activation="relu"))
+        # 添加完全连接层作为输出层，分成10个类
+        model.add(tf.keras.layers.Dense(num_class, activation="softmax"))
+        # 使用交叉熵损失函数，使用Adam优化器
+        model.compile(loss=tf.keras.losses.categorical_crossentropy,
+                      optimizer=tf.keras.optimizers.Adam(),
+                      metrics=['accuracy'])
+    return model
+
+
 def train_keras_cnn(trainX, trainY, testX, testY):
     """使用keras构建CNN训练手写识别系统
 
@@ -34,7 +72,8 @@ def train_keras_cnn(trainX, trainY, testX, testY):
     Returns:
         errRate: 错误率
     """
-    batch_size = 10
+    # 每个gpu上分配的batch大小
+    batch_size_per_replica = 100
     epochs = 10
     # 手写识别有10个数字
     num_class = 10
@@ -43,29 +82,19 @@ def train_keras_cnn(trainX, trainY, testX, testY):
     trainY = tf.keras.utils.to_categorical(trainY, num_class)
     testY = tf.keras.utils.to_categorical(testY, num_class)
 
-    # 创建 keras 序贯模型
-    model = tf.keras.models.Sequential()
-    # 添加一个卷积层, 32个卷积核，激活函数用relu
-    model.add(tf.keras.layers.Conv2D(32, kernel_size=(5, 5), strides=(1, 1),
-                                     activation='relu', input_shape=[28, 28, 1]
-                                     ))
-    # 添加一个max pool层
-    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-    # 添加第二个卷积层
-    model.add(tf.keras.layers.Conv2D(64, (5, 5), activation="relu"))
-    # 添加第二个max pool层
-    model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
-    # 添加flatten层
-    model.add(tf.keras.layers.Flatten())
-    # 添加完全连接层，1000个nn，使用relu激活函数
-    model.add(tf.keras.layers.Dense(1000, activation="relu"))
-    # 添加完全连接层作为输出层，分成10个类
-    model.add(tf.keras.layers.Dense(num_class, activation="softmax"))
+    # 创建分布式计算策略，选择镜像分布式策略，即将batch平均分成N（gpu的个数）份
+    # 实测需要把tensorflow-gpu版本升级到1.14，使用pip install tf-nightly-gpu命令
+    # 最终版本为Python(3.6.8) + tensorflow-gpu(1.14.1-dev20190617)
+    mirrored_strategy = tf.distribute.MirroredStrategy()
 
-    model.compile(loss=tf.keras.losses.categorical_crossentropy,  # 使用交叉熵损失函数
-                  optimizer=tf.keras.optimizers.Adam(),  # 使用Adam优化器
-                  metrics=['accuracy'])  # 在训练和测试时需要评估的度量
+    # 计算所有gpu上batch size总大小
+    batch_size_total = batch_size_per_replica * mirrored_strategy.num_replicas_in_sync
+    print("batch_size_total: ", str(batch_size_total))
 
+    # 创建网络模型
+    model = create_network(mirrored_strategy, num_class)
+
+    # 定义学习速率配置函数
     def learning_rate_scheduler(epoch):
         """The learning rate scheduler function.
 
@@ -78,6 +107,7 @@ def train_keras_cnn(trainX, trainY, testX, testY):
         print("learning_rate_scheduler epoch:", epoch)
         return 1e-3
 
+    # 定义model fit过程的回调
     callbacks = [
         # Model saver callback.
         tf.keras.callbacks.ModelCheckpoint(filepath=SAVER_PATH),
@@ -92,7 +122,7 @@ def train_keras_cnn(trainX, trainY, testX, testY):
 
     model.fit(trainX,  # 输入数据列表
               trainY,  # 输入标签列表
-              batch_size=batch_size,  # 梯度更新时样本数
+              batch_size=batch_size_total,  # 梯度更新时样本数
               epochs=epochs,  # 训练轮数
               verbose=1,  # log等级
               validation_data=(testX, testY),  # 测试数据与标签
@@ -118,7 +148,7 @@ def train_keras_cnn(trainX, trainY, testX, testY):
                         verbose=1,
                         validation_data=(testX, testY))
     """
-    score = model.evaluate(testX, testY, verbose=0)  # 评估模型
+    score = model.evaluate(testX, testY, verbose=1, batch_size=100)  # 评估模型
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
 
