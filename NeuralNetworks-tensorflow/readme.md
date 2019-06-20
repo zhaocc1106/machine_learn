@@ -11,6 +11,8 @@
     * res_net_model目录-(resnet 模型)<br>
         * resnet.py-(构建resnet网络模型，分类imageNet网络上的图片以及cifar10图片)
         * cifar10_input_for_resnet.py-(将cifar10_input改造成可训练resnet网络的格式)
+    * transfer_learning目录-(transfer learning模型)<br>
+        * simple_transfer_learning.py-(使用tf hub的模型实现迁移学习模型，并且分类flowers数据集)
 2. datasets_learn目录-(tf.data用法学习)<br>
     * practice.py-(实践测试tf.data的用法，包括迭代器使用、解析tfRecords数据、解析csv数据、解析image数据等)
 3. estimator_learn目录-(Estimator模块学习)
@@ -42,6 +44,7 @@
     * MLP.png-(mnist训练一个多层全连接网络模型)
     * reinforcement_learning_value_network_for_grid_world.png-
     (使用grid_world小游戏训练Deep Q-Learning network)
+    * simple_transfer_learning_results.png-(使用flowers数据训练迁移学习的结果)
     * softmax_regression.png-(mnist训练softmax回归分类模型)
     * words2vec_by_skip_gram.png-(skip-gram算法训练出的words向量分布图)
 8. reinforcement_learning目录-深度强化学习<br>
