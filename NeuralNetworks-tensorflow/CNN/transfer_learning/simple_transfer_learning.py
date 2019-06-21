@@ -2,8 +2,12 @@
 # Copyright (c) 2019 Baidu.com, Inc. All Rights Reserved
 #
 """
-This is a simple transfer learning model via tf hub.
+This is a simple transfer learning model via tf hub(https://tfhub.dev/).
 Copy the codes into colab of google to run, otherwise can't access tf hub.
+
+Need install tf-hub as follow:
+pip install -U --pre tf-hub-nightly
+
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2019/6/19 下午8:32
@@ -78,7 +82,7 @@ def build_model(pre_trained_model_url):
         The transfer learning network model.
     """
     # Construct the feature extractor layer via tf hub model.
-    feature_extractor_layer = tf_hub.KerasLayer(handle=PRE_TRAINED_MODEL_URL,
+    feature_extractor_layer = tf_hub.KerasLayer(handle=pre_trained_model_url,
                                                 trainable=False,
                                                 input_shape=[224, 224, 3])
     model = keras.Sequential([
