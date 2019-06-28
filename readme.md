@@ -2,7 +2,7 @@
 
 ## 快速开始
    IDE使用Pycharm，每一个目录当作一个pycharm工程。<br>
-   Python环境使用Anaconda环境，版本是Anaconda3-5.1.0和Anaconda2-2018.12<br>
+   Python环境使用Anaconda环境，版本是Anaconda3-5.1.0<br>
    NeuralNetworks-tensorflow用到了tensorflow环境，安装tensorflow-gpu过程，建议参考个人博客如下链接：
    https://blog.csdn.net/zcc450959507/article/details/89672332
 
