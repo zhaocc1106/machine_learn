@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 MODEL_PATH = "/tmp/kerasCNN/"
 SAVER_PATH = "/tmp/kerasCNN/model_saver.h5"
 
+print(os.environ['LD_LIBRARY_PATH'])
 
 def create_network(mirrored_strategy, num_class):
     """创建网络模型
