@@ -139,7 +139,8 @@ def define_loss(real_output, fake_output):
     cross_entropy = keras.losses.BinaryCrossentropy(from_logits=True)
 
     # Let generator classify if the image is true image.
-    discriminator_loss = cross_entropy(tf.ones_like(real_output), real_output) + \
+    discriminator_loss = cross_entropy(tf.ones_like(real_output),
+                                       real_output) + \
                          cross_entropy(tf.zeros_like(fake_output), fake_output)
 
     # Generator fake out the discriminator in order to let it believe the image
@@ -151,7 +152,7 @@ def define_loss(real_output, fake_output):
 
 @tf.function
 def train_step(generator, discriminator, generator_optimizer,
-               discriminator_optimizer, images_batch):
+               discriminator_optimizer, images_batch, show_info):
     """One step to train the generator and discriminator model.
 
     Args:
@@ -160,6 +161,7 @@ def train_step(generator, discriminator, generator_optimizer,
         generator_optimizer: The generator gradient optimizer.
         discriminator_optimizer: The discriminator gradient optimizer.
         images_batch: Images of one batch.
+        show_info: If show the loss and accuracy info of current step.
     """
     noise = tf.random.normal([BATCH_SIZE, NOISE_DIM])
 
@@ -169,11 +171,23 @@ def train_step(generator, discriminator, generator_optimizer,
 
         # Infer the real output of discriminator with real image input.
         real_output = discriminator(images_batch, training=True)
+
         # Infer the fake output of discriminator with fake image input.
         fake_output = discriminator(generated_images, training=True)
 
         # Infer the generator loss and discriminator loss.
         gen_loss, dis_loss = define_loss(real_output, fake_output)
+
+        if show_info:
+            fake_success = tf.cast(fake_output > 0.5, tf.float32)
+            fake_success_rate = tf.reduce_sum(fake_success) / \
+                                fake_success.shape[0]
+            print("The fake success rate:")
+            tf.print(fake_success_rate)
+            print("The generator loss:")
+            tf.print(gen_loss)
+            print("The discriminator loss:")
+            tf.print(dis_loss)
 
     # Calc the gradients of generator variables.
     grad_of_generator = gen_grad.gradient(target=gen_loss,
@@ -235,9 +249,11 @@ def train(generator, discriminator, dataset, epochs):
     for epoch in range(epochs):
         start = time.time()
 
-        for image_batch in dataset:
+        show_info_step = BUFFER_SIZE // BATCH_SIZE
+        for n, image_batch in enumerate(dataset):
             train_step(generator, discriminator, gen_optimizer,
-                       dis_optimizer, image_batch)
+                       dis_optimizer, image_batch,
+                       True if n == show_info_step else False)
 
         # Produce images for the GIF as we go
         generate_and_save_images(generator,
