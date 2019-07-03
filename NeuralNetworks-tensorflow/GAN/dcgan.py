@@ -64,7 +64,7 @@ def build_dcgan_model():
     Generator model.
     Convert random vector with shape (100,) to (28, 28, 1) image.
     """
-    generator = keras.models.Sequential()
+    generator = keras.models.Sequential(name="generator")
     generator.add(keras.layers.Dense(units=7 * 7 * 256, use_bias=False,
                                      input_shape=(100,)))
     generator.add(keras.layers.BatchNormalization())
@@ -103,7 +103,7 @@ def build_dcgan_model():
     Discriminator model.
     Convert image with shape(28, 28, 1) to label(true image or fake image). 
     """
-    discriminator = tf.keras.Sequential()
+    discriminator = tf.keras.Sequential(name="discriminator")
     discriminator.add(keras.layers.Conv2D(filters=64,
                                           kernel_size=(5, 5),
                                           strides=(2, 2),
@@ -121,6 +121,9 @@ def build_dcgan_model():
 
     discriminator.add(keras.layers.Flatten())
     discriminator.add(keras.layers.Dense(1))
+
+    generator.summary()
+    discriminator.summary()
 
     return generator, discriminator
 
@@ -152,7 +155,7 @@ def define_loss(real_output, fake_output):
 
 @tf.function
 def train_step(generator, discriminator, generator_optimizer,
-               discriminator_optimizer, images_batch, show_info):
+               discriminator_optimizer, images_batch):
     """One step to train the generator and discriminator model.
 
     Args:
@@ -161,7 +164,6 @@ def train_step(generator, discriminator, generator_optimizer,
         generator_optimizer: The generator gradient optimizer.
         discriminator_optimizer: The discriminator gradient optimizer.
         images_batch: Images of one batch.
-        show_info: If show the loss and accuracy info of current step.
     """
     noise = tf.random.normal([BATCH_SIZE, NOISE_DIM])
 
@@ -178,16 +180,34 @@ def train_step(generator, discriminator, generator_optimizer,
         # Infer the generator loss and discriminator loss.
         gen_loss, dis_loss = define_loss(real_output, fake_output)
 
-        if show_info:
-            fake_success = tf.cast(fake_output > 0.5, tf.float32)
-            fake_success_rate = tf.reduce_sum(fake_success) / \
-                                fake_success.shape[0]
-            print("The fake success rate:")
-            tf.print(fake_success_rate)
-            print("The generator loss:")
-            tf.print(gen_loss)
-            print("The discriminator loss:")
-            tf.print(dis_loss)
+    fake_success = tf.cast(fake_output >= 0.5, tf.float32)
+    # Fake success number.
+    fake_success_num = tf.reduce_sum(fake_success)
+    # Fake success rate.
+    fake_success_rate = fake_success_num / fake_output.shape[0]
+
+    # Discriminator success number.
+    disc_success_num = tf.reduce_sum(tf.cast(real_output >= 0.5,
+                                             tf.float32)) + \
+                       (fake_output.shape[0] - fake_success_num)
+    # Discriminator accuracy.
+    disc_accuracy = disc_success_num / \
+                    (real_output.shape[0] + fake_output.shape[0])
+
+    gen_vars = []
+    for var in generator.trainable_variables:
+        gen_vars.append((var.name, var))
+
+    disc_vars = []
+    for var in discriminator.trainable_variables:
+        disc_vars.append((var.name, var))
+
+    step_result = {"gen_loss": gen_loss,
+                   "dis_loss": dis_loss,
+                   "fake_success_rate": fake_success_rate,
+                   "disc_accuracy": disc_accuracy,
+                   "generator_vars": gen_vars,
+                   "disc_vars": disc_vars}
 
     # Calc the gradients of generator variables.
     grad_of_generator = gen_grad.gradient(target=gen_loss,
@@ -201,6 +221,7 @@ def train_step(generator, discriminator, generator_optimizer,
                                             generator.trainable_variables))
     discriminator_optimizer.apply_gradients(zip(grad_of_discriminator,
                                                 discriminator.trainable_variables))
+    return step_result
 
 
 def generate_and_save_images(model, epoch, test_input):
@@ -243,34 +264,78 @@ def train(generator, discriminator, dataset, epochs):
                                      generator=generator,
                                      discriminator=discriminator)
 
+    # Define the tensorboard.
+    tf_summary_writer = tf.summary.create_file_writer(MODEL_PATH)
+
     # Generate random seed as test input of generator.
     seed = tf.random.normal(shape=[16, NOISE_DIM])
 
     for epoch in range(epochs):
         start = time.time()
 
-        show_info_step = BUFFER_SIZE // BATCH_SIZE
         for n, image_batch in enumerate(dataset):
-            train_step(generator, discriminator, gen_optimizer,
-                       dis_optimizer, image_batch,
-                       True if n == show_info_step else False)
+            step_result = train_step(generator,
+                                     discriminator,
+                                     gen_optimizer,
+                                     dis_optimizer,
+                                     image_batch)
 
         # Produce images for the GIF as we go
         generate_and_save_images(generator,
                                  epoch + 1,
                                  seed)
 
+        # Show info.
+        print("\n\n")
+        print("The fake success rate for epoch {0}: {1:.2%}".format(
+            epoch, step_result["fake_success_rate"].numpy()))
+        print("The discriminator accuracy for epoch {0}: {1:.2%}:".format(
+            epoch, step_result["disc_accuracy"].numpy()))
+        print("The generator loss for epoch {0}: {1:.5}".format(
+            epoch, step_result["gen_loss"].numpy()))
+        print("The discriminator loss for epoch {0}: {1:.5}".format(
+            epoch, step_result["dis_loss"].numpy()))
+
+        # Tensorboard.
+        with tf_summary_writer.as_default():
+            # Scalars.
+            tf.summary.scalar("fake_success_rate:",
+                              step_result["fake_success_rate"],
+                              step=epoch)
+            tf.summary.scalar("discriminator_accuracy:",
+                              step_result["disc_accuracy"],
+                              step=epoch)
+            tf.summary.scalar("generator_loss",
+                              step_result["gen_loss"],
+                              step=epoch)
+            tf.summary.scalar("discriminator_loss",
+                              step_result["dis_loss"],
+                              step=epoch)
+
+            # Variables distribution.
+            def vars_summary(scope, vars):
+                """Save the vars summary."""
+                for var in vars:
+                    tf.summary.histogram(
+                        name=scope + "/" + var[0].numpy().decode("utf-8"),
+                        data=var[1].numpy(),
+                        step=epoch)
+            vars_summary("generator", step_result["generator_vars"])
+            vars_summary("discriminator", step_result["disc_vars"])
+
         # Save the model every 15 epochs
         if (epoch + 1) % 15 == 0:
             checkpoint.save(file_prefix=CHECK_POINT_PATH)
 
-        print('Time for epoch {} is {} sec'.format(epoch + 1,
-                                                   time.time() - start))
+        print('Time for epoch {} is {:.2} sec'.format(epoch + 1,
+                                                      time.time() - start))
 
     # Generate after the final epoch
     generate_and_save_images(generator,
                              epochs,
                              seed)
+
+    tf_summary_writer.close()
 
 
 def create_gif():
