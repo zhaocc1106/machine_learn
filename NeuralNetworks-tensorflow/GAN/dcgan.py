@@ -120,7 +120,7 @@ def build_dcgan_model():
     discriminator.add(keras.layers.Dropout(0.3))
 
     discriminator.add(keras.layers.Flatten())
-    discriminator.add(keras.layers.Dense(1))
+    discriminator.add(keras.layers.Dense(2))
 
     generator.summary()
     discriminator.summary()
@@ -139,16 +139,32 @@ def define_loss(real_output, fake_output):
     Returns:
         The generator loss and discriminator loss.
     """
-    cross_entropy = keras.losses.BinaryCrossentropy(from_logits=True)
+    # Real image output shape.
+    label_shape = [real_output.shape[0]]
+    real_true_label_output = tf.cast(tf.ones(shape=label_shape),
+                                     tf.float32)
+    real_false_label_output = tf.cast(tf.zeros(shape=label_shape),
+                                      tf.float32)
 
-    # Let generator classify if the image is true image.
-    discriminator_loss = cross_entropy(tf.ones_like(real_output),
-                                       real_output) + \
-                         cross_entropy(tf.zeros_like(fake_output), fake_output)
+    # Fake image output shape.
+    label_shape = [fake_output.shape[0]]
+    fake_true_label_output = tf.cast(tf.ones(shape=label_shape),
+                                     tf.float32)
+    fake_false_label_output = tf.cast(tf.zeros(shape=label_shape),
+                                      tf.float32)
+
+    # Let discriminator classify if the image is true image.
+    discriminator_loss = \
+        tf.reduce_mean(keras.losses.sparse_categorical_crossentropy(
+            real_true_label_output, real_output, from_logits=True)) + \
+        tf.reduce_mean(keras.losses.sparse_categorical_crossentropy(
+            fake_false_label_output, fake_output, from_logits=True))
 
     # Generator fake out the discriminator in order to let it believe the image
     # generated from generator is true image.
-    generator_loss = cross_entropy(tf.ones_like(fake_output), fake_output)
+    generator_loss = tf.reduce_mean(
+        keras.losses.sparse_categorical_crossentropy(
+            fake_true_label_output, fake_output, from_logits=True))
 
     return generator_loss, discriminator_loss
 
@@ -180,15 +196,16 @@ def train_step(generator, discriminator, generator_optimizer,
         # Infer the generator loss and discriminator loss.
         gen_loss, dis_loss = define_loss(real_output, fake_output)
 
-    fake_success = tf.cast(fake_output >= 0.5, tf.float32)
+    fake_success = tf.cast(fake_output[:, 1] > fake_output[:, 0],
+                           tf.float32)
     # Fake success number.
     fake_success_num = tf.reduce_sum(fake_success)
     # Fake success rate.
     fake_success_rate = fake_success_num / fake_output.shape[0]
 
     # Discriminator success number.
-    disc_success_num = tf.reduce_sum(tf.cast(real_output >= 0.5,
-                                             tf.float32)) + \
+    disc_success_num = tf.reduce_sum(
+        tf.cast(real_output[:, 1] > real_output[:, 0], tf.float32)) + \
                        (fake_output.shape[0] - fake_success_num)
     # Discriminator accuracy.
     disc_accuracy = disc_success_num / \
@@ -272,6 +289,7 @@ def train(generator, discriminator, dataset, epochs):
 
     for epoch in range(epochs):
         start = time.time()
+        tf.summary.trace_on(graph=True)
 
         for n, image_batch in enumerate(dataset):
             step_result = train_step(generator,
@@ -298,6 +316,8 @@ def train(generator, discriminator, dataset, epochs):
 
         # Tensorboard.
         with tf_summary_writer.as_default():
+            tf.summary.trace_export(name="dcgan", step=epoch)
+
             # Scalars.
             tf.summary.scalar("fake_success_rate:",
                               step_result["fake_success_rate"],
@@ -320,6 +340,7 @@ def train(generator, discriminator, dataset, epochs):
                         name=scope + "/" + var[0].numpy().decode("utf-8"),
                         data=var[1].numpy(),
                         step=epoch)
+
             vars_summary("generator", step_result["generator_vars"])
             vars_summary("discriminator", step_result["disc_vars"])
 
