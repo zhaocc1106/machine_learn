@@ -122,10 +122,184 @@ def build_dcgan_model():
     discriminator.add(keras.layers.Flatten())
     discriminator.add(keras.layers.Dense(2))
 
-    generator.summary()
-    discriminator.summary()
-
     return generator, discriminator
+
+
+class GeneratorModel(keras.Model):
+    """The generator model."""
+
+    def __init__(self):
+        """The structure function."""
+        super(GeneratorModel, self).__init__(name="Generator")
+
+        self.dense1 = keras.layers.Dense(units=7 * 7 * 256,
+                                         use_bias=False,
+                                         input_shape=(100,))
+        self.bn1 = keras.layers.BatchNormalization()
+        self.lkrelu1 = keras.layers.LeakyReLU()
+        self.reshape1 = keras.layers.Reshape(target_shape=(7, 7, 256))
+
+        self.conv2 = keras.layers.Conv2DTranspose(filters=128,
+                                                  kernel_size=(5, 5),
+                                                  strides=(1, 1),
+                                                  padding="same",
+                                                  use_bias=False)
+        self.bn2 = keras.layers.BatchNormalization()
+        self.lkrelu2 = keras.layers.LeakyReLU()
+
+        self.conv3 = keras.layers.Conv2DTranspose(filters=64,
+                                                  kernel_size=(5, 5),
+                                                  strides=(2, 2),
+                                                  padding='same',
+                                                  use_bias=False)
+        self.bn3 = keras.layers.BatchNormalization()
+        self.lkrelu3 = keras.layers.LeakyReLU()
+
+        self.conv4 = keras.layers.Conv2DTranspose(filters=1,
+                                                  kernel_size=(5, 5),
+                                                  strides=(2, 2),
+                                                  padding='same',
+                                                  use_bias=False,
+                                                  activation='tanh')
+
+    @tf.function
+    def call(self, inputs, training=None, mask=None):
+        """The model caller function.
+
+        Args:
+            inputs: The input.
+            training: If training.
+            mask: A mask or list of masks. A mask can be either a tensor or None
+             (no mask).
+
+        Returns:
+            return output.
+        """
+        x = self.dense1(inputs)
+        x = self.bn1(x)
+        x = self.lkrelu1(x)
+        x = self.reshape1(x)
+
+        x = self.conv2(x)
+        x = self.bn2(x)
+        x = self.lkrelu2(x)
+
+        x = self.conv3(x)
+        x = self.bn3(x)
+        x = self.lkrelu3(x)
+
+        return self.conv4(x)
+
+
+class Discriminator(keras.Model):
+    """The discriminator model."""
+
+    def __init__(self):
+        """The structure function."""
+        super(Discriminator, self).__init__(name="Discriminator")
+        self.conv1 = keras.layers.Conv2D(filters=64,
+                                         kernel_size=(5, 5),
+                                         strides=(2, 2),
+                                         padding='same',
+                                         input_shape=[28, 28, 1])
+        self.lkrelu1 = keras.layers.LeakyReLU()
+        self.dropout1 = keras.layers.Dropout(0.3)
+
+        self.conv2 = keras.layers.Conv2D(filters=128,
+                                         kernel_size=(5, 5),
+                                         strides=(2, 2),
+                                         padding='same')
+        self.lkrelu2 = keras.layers.LeakyReLU()
+        self.dropout2 = keras.layers.Dropout(0.3)
+        self.flatten2 = keras.layers.Flatten()
+
+        self.dense3 = keras.layers.Dense(2)
+
+    def call(self, inputs, training=None, mask=None):
+        """The model caller function.
+
+        Args:
+            inputs: The input.
+            training: If training.
+            mask: A mask or list of masks. A mask can be either a tensor or None
+             (no mask).
+
+        Returns:
+            return output.
+        """
+        x = self.conv1(inputs)
+        x = self.lkrelu1(x)
+        x = self.dropout1(x)
+
+        x = self.conv2(x)
+        x = self.lkrelu2(x)
+        x = self.dropout2(x)
+        x = self.flatten2(x)
+
+        return self.dense3(x)
+
+
+def generator_model_function():
+    """Build generator with function api."""
+    inputs = keras.Input(shape=(100,))
+
+    x = keras.layers.Dense(units=7 * 7 * 256, use_bias=False,
+                           input_shape=(100,))(inputs)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
+
+    x = keras.layers.Reshape(target_shape=(7, 7, 256))(x)
+
+    x = keras.layers.Conv2DTranspose(filters=128,
+                                     kernel_size=(5, 5),
+                                     strides=(1, 1),
+                                     padding="same",
+                                     use_bias=False)(x)
+
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
+
+    x = keras.layers.Conv2DTranspose(filters=64,
+                                     kernel_size=(5, 5),
+                                     strides=(2, 2),
+                                     padding='same',
+                                     use_bias=False)(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.LeakyReLU()(x)
+
+    outputs = keras.layers.Conv2DTranspose(filters=1,
+                                           kernel_size=(5, 5),
+                                           strides=(2, 2),
+                                           padding='same',
+                                           use_bias=False,
+                                           activation='tanh')(x)
+
+    return inputs, outputs
+
+
+def discriminator_model_function():
+    """Build discriminator with function api."""
+    inputs = keras.Input(shape=(28, 28, 1))
+
+    x = keras.layers.Conv2D(filters=64,
+                            kernel_size=(5, 5),
+                            strides=(2, 2),
+                            padding='same',
+                            input_shape=[28, 28, 1])(inputs)
+    x = keras.layers.LeakyReLU()(x)
+    x = keras.layers.Dropout(0.3)(x)
+
+    x = keras.layers.Conv2D(filters=128,
+                            kernel_size=(5, 5),
+                            strides=(2, 2),
+                            padding='same')(x)
+    x = keras.layers.LeakyReLU()(x)
+    x = keras.layers.Dropout(0.3)(x)
+
+    x = keras.layers.Flatten()(x)
+    outputs = keras.layers.Dense(2)(x)
+
+    return inputs, outputs
 
 
 def define_loss(real_output, fake_output):
@@ -298,21 +472,16 @@ def train(generator, discriminator, dataset, epochs):
                                      dis_optimizer,
                                      image_batch)
 
-        # Produce images for the GIF as we go
-        generate_and_save_images(generator,
-                                 epoch + 1,
-                                 seed)
-
         # Show info.
         print("\n\n")
         print("The fake success rate for epoch {0}: {1:.2%}".format(
-            epoch, step_result["fake_success_rate"].numpy()))
+            epoch + 1, step_result["fake_success_rate"].numpy()))
         print("The discriminator accuracy for epoch {0}: {1:.2%}:".format(
-            epoch, step_result["disc_accuracy"].numpy()))
+            epoch + 1, step_result["disc_accuracy"].numpy()))
         print("The generator loss for epoch {0}: {1:.5}".format(
-            epoch, step_result["gen_loss"].numpy()))
+            epoch + 1, step_result["gen_loss"].numpy()))
         print("The discriminator loss for epoch {0}: {1:.5}".format(
-            epoch, step_result["dis_loss"].numpy()))
+            epoch + 1, step_result["dis_loss"].numpy()))
 
         # Tensorboard.
         with tf_summary_writer.as_default():
@@ -344,12 +513,17 @@ def train(generator, discriminator, dataset, epochs):
             vars_summary("generator", step_result["generator_vars"])
             vars_summary("discriminator", step_result["disc_vars"])
 
+        print('Time for epoch {} is {:.2} sec'.format(epoch + 1,
+                                                      time.time() - start))
+
         # Save the model every 15 epochs
         if (epoch + 1) % 15 == 0:
             checkpoint.save(file_prefix=CHECK_POINT_PATH)
 
-        print('Time for epoch {} is {:.2} sec'.format(epoch + 1,
-                                                      time.time() - start))
+        # Produce images for the GIF as we go
+        generate_and_save_images(generator,
+                                 epoch + 1,
+                                 seed)
 
     # Generate after the final epoch
     generate_and_save_images(generator,
@@ -382,8 +556,30 @@ def create_gif():
 if __name__ == "__main__":
     # Load dataset.
     train_images = load_fashion_mnist_dataset()
+
     # Build dcgan model.
-    generator, discriminator = build_dcgan_model()
+    # Build model with sequential api.
+    # generator, discriminator = build_dcgan_model()
+    # generator.summary()
+    # discriminator.summary()
+
+    # Build model with model class.
+    # generator = GeneratorModel()
+    # generator.build(input_shape=(None, NOISE_DIM))
+    # generator.summary()
+    # discriminator = Discriminator()
+    # discriminator.build(input_shape=(None, 28, 28, 1))
+    # discriminator.summary()
+
+    # Build model with function api.
+    gen_in, gen_out = generator_model_function()
+    generator = keras.Model(inputs=gen_in, outputs=gen_out)
+    generator.summary()
+
+    dis_in, dis_out = discriminator_model_function()
+    discriminator = keras.Model(inputs=dis_in, outputs=dis_out)
+    discriminator.summary()
+
     # Train the model.
     train(generator, discriminator, train_images, EPOCH_SIZE)
     # Create gif using generated image of every epoch.
