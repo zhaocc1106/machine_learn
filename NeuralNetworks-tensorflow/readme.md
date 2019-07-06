@@ -13,6 +13,7 @@
         * cifar10_input_for_resnet.py-(将cifar10_input改造成可训练resnet网络的格式)
     * transfer_learning目录-(transfer learning模型)<br>
         * simple_transfer_learning.py-(使用tf hub的模型实现迁移学习模型，并且分类flowers数据集)
+        * transfer_learning.py-(使用keras application实现迁移学习模型，并且分类dogs_vs_cats数据集)
 2. datasets_learn目录-(tf.data用法学习)<br>
     * practice.py-(实践测试tf.data的用法，包括迭代器使用、解析tfRecords数据、解析csv数据、解析image数据等)
 3. estimator_learn目录-(Estimator模块学习)
@@ -45,12 +46,16 @@
     (cifar10数据训练已经预训练过的resnet101模型50个epochs)
     * cifar10_train_resnet101_top_1_150_epochs.png-
     (cifar10数据训练resnet101模型150个epochs)
+    * dog_vs_cat_train_transfer_learning_model_accuracy.png-
+    (使用dogs_vs_cats数据集训练迁移学习模型的准确率变化)
+    * dog_vs_cat_train_transfer_learning_model_result.png-
+    (使用dogs_vs_cats数据集训练迁移学习模型的结果展示)
     * image_net_train_alex_net_top_1.png-(image_net数据训练alex_net网络)
     * keras_cnn_classify_mnist.png-(KerasCNN.py训练结果)
     * MLP.png-(mnist训练一个多层全连接网络模型)
     * reinforcement_learning_value_network_for_grid_world.png-
     (使用grid_world小游戏训练Deep Q-Learning network)
-    * simple_transfer_learning_results.png-(使用flowers数据训练迁移学习的结果)
+    * simple_transfer_learning_results.png-(使用flowers数据训练迁移学习的结果展示)
     * softmax_regression.png-(mnist训练softmax回归分类模型)
     * words2vec_by_skip_gram.png-(skip-gram算法训练出的words向量分布图)
 10. reinforcement_learning目录-深度强化学习<br>
