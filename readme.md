@@ -7,19 +7,22 @@
    https://blog.csdn.net/zcc450959507/article/details/89672332
 
 ## 分类算法
-   kNN、DecisionTree、NaiveBayes、SVM、LogisticRegressionClassifier、AdaBoost
+   kNN、DecisionTree、NaiveBayes、SVM、LogisticRegressionClassifier
 
 ## 回归算法
    regression、regressionTrees
 
 ## 聚类算法
    kMeans、Apriori、FP-growth
+   
+## 集成与提升
+   AdaBoost
+
+## 降维工具
+   PCA、SVD
 
 ## 深度学习
    NeuralNetworks、NeuralNetworks-tensorflow
 
 ## 目标检测
    [faster r-cnn模型](https://github.com/zhaocc1106/tf-faster-rcnn)
-      
-## 降噪工具
-   PCA、SVD
