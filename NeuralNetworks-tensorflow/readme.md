@@ -22,7 +22,10 @@
     estimator的用法)
     * DNN_linear_combined_classifier.py-(使用tf.estimator.DNNLinearCombinedClassifier
     分类census数据)
-4. GAN目录-(对抗生成神经网络)
+4. generation_network_model目录-(生成神经网络)
+    * auto_encoder.py-(自动编码器)
+    * cvae.py-(条件变分自动编码器)
+    * vcae_class_9.png-(指定类型为9生成的高斯分布对应的cvae生成器输出)
     * dcgan.py-(使用fashion mnist数据集训练一个深度卷积对抗生成网络)
     * dgcan.gif-(记录dcgan训练过程中生成的图片的gif)
 5. image_net_origin_files目录<br>
@@ -82,5 +85,4 @@
     * words_downloader_and_reader.py-(word2vec使用到的words downloader and reader)
 13. words_data目录-(words_vec模型使用的训练语言数据)<br>
 14. MLP.py-(简单多层全连接神经网络分类器)<br>
-15. auto_encoder.py-（自动编码器）<br>
-16. softmax_regression.py-(根据softmax 回归的简单分类器)<br>
+15. softmax_regression.py-(根据softmax 回归的简单分类器)<br>
