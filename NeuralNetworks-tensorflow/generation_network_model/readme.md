@@ -20,3 +20,11 @@ dcgan.py
 [译文 | 让深度卷积网络对抗：DCGAN——深度卷积生成对抗网络](https://ask.julyedu.com/question/7681)<br>
 [生成对抗网络——GAN](https://blog.csdn.net/leviopku/article/details/81292192)<br>
 [keras实现dcgan](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/r2/tutorials/generative/dcgan.ipynb#scrollTo=rF2x3qooyBTI)
+
+
+## pix2pix模型
+pix2pix.py
+### 参考
+[Image-to-Image Translation with Conditional Adversarial Networks论文](https://arxiv.org/abs/1611.07004)<br>
+[keras实现](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/r2/tutorials/generative/pix2pix.ipynb#scrollTo=0FMYgY_mPfTi)<br>
+[数据集](https://www.kaggle.com/vikramtiwari/pix2pix-dataset)

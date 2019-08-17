@@ -28,6 +28,7 @@
     * vcae_class_9.png-(指定类型为9生成的高斯分布对应的cvae生成器输出)
     * dcgan.py-(使用fashion mnist数据集训练一个深度卷积对抗生成网络)
     * dgcan.gif-(记录dcgan训练过程中生成的图片的gif)
+    * pix2pix.py-(pix2pix模型)
 5. image_net_origin_files目录<br>
     * 从ImageNet下载下来的几个分类图片的urls文件，每个分类大概有1000个图片
     * 下载器会把原始图片保存在该目录
