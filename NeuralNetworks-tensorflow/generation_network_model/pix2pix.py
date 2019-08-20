@@ -28,10 +28,14 @@ FACADES_URL = 'https://people.eecs.berkeley.edu/~tinghuiz/projects/pix2pix/' \
               'datasets/facades.tar.gz'
 GOOGLE_MAPS_DATA_URL = "https://people.eecs.berkeley.edu/~tinghuiz/projects/" \
                        "pix2pix/datasets/maps.tar.gz"
+EDGES_2_SHOES_URL = "https://people.eecs.berkeley.edu/~tinghuiz/projects/" \
+                    "pix2pix/datasets/edges2shoes.tar.gz"
+CITYSCAPES_URL = "https://people.eecs.berkeley.edu/~tinghuiz/projects/" \
+                 "pix2pix/datasets/cityscapes.tar.gz"
 LAMBDA = 100
-MODEL_PATH = "tmp/pix2pix/"
-CHECKPOINT_PATH = MODEL_PATH + "training_checkpoint/ckpt"
-EPOCHES = 200
+MODEL_PATH = "/tmp/pix2pix/"
+CHECKPOINT_PATH = ""
+EPOCHES = 80
 
 
 def load_image(image_file, is_train):
@@ -94,11 +98,15 @@ def load_data(data_type):
     """Load training and test data.
 
     Args:
-        data_type: The dataset type. "facades", "maps".
+        data_type: The dataset type. "facades", "maps", "edges2shoes",
+        "cityscapes".
 
     Returns:
        training data and test data.
     """
+    global CHECKPOINT_PATH
+    CHECKPOINT_PATH = MODEL_PATH + data_type + "/training_checkpoint/ckpt"
+
     if data_type == "facades":
         # facades dataset.
         path_to_zip = tf.keras.utils.get_file('facades.tar.gz',
@@ -111,6 +119,16 @@ def load_data(data_type):
                                               origin=GOOGLE_MAPS_DATA_URL,
                                               extract=True)
         path = os.path.join(os.path.dirname(path_to_zip), 'maps/')
+    elif data_type == "edges2shoes":
+        path_to_zip = tf.keras.utils.get_file('edges2shoes.tar.gz',
+                                              origin=EDGES_2_SHOES_URL,
+                                              extract=True)
+        path = os.path.join(os.path.dirname(path_to_zip), 'edges2shoes/')
+    elif data_type == "cityscapes":
+        path_to_zip = tf.keras.utils.get_file('cityscapes.tar.gz',
+                                              origin=CITYSCAPES_URL,
+                                              extract=True)
+        path = os.path.join(os.path.dirname(path_to_zip), 'cityscapes/')
 
     training_dataset = tf.data.Dataset.list_files(path + "train/*.jpg")
     training_dataset = training_dataset.shuffle(BUFFER_SIZE)
@@ -393,7 +411,6 @@ def generate_image(model, test_input, target):
     So training is True.
     """
     prediction = model(test_input, training=True)
-    plt.figure(figsize=(15, 15))
 
     images = [test_input[0], target[0], prediction[0]]
     title = ["Input image", "Target image", "Predicted image"]
@@ -429,7 +446,7 @@ def train(training_data, test_data, generator, discriminator):
 
     for epoch in range(EPOCHES):
         start_time = time.time()
-        for input_image, target_image in training_data:
+        for step, (input_image, target_image) in enumerate(training_data):
             with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
                 # Generate output.
                 gen_output = generator(input_image, training=True)
@@ -457,6 +474,11 @@ def train(training_data, test_data, generator, discriminator):
             gen_optimizer.apply_gradients(zip(gen_gradients,
                                               generator.variables))
 
+            if (step + 1) % 200 == 0:
+                # Show the train result.
+                for input, real_image in test_data.take(1):
+                    generate_image(generator, input, real_image)
+
         print("[EPOCH {0}] use {1}s, with disc_loss: {2:.5}, gen_loss: {"
               "3:.5}".format(epoch + 1, time.time() - start_time, disc_loss,
                              gen_loss))
@@ -464,10 +486,6 @@ def train(training_data, test_data, generator, discriminator):
         # Save checkpoint.
         if (epoch + 1) % 10 == 0:
             checkpoint.save(file_prefix=CHECKPOINT_PATH)
-
-        # Show the train result.
-        for input, real_image in test_data.take(1):
-            generate_image(generator, input, real_image)
 
 
 def convert_to_rgb(input):
@@ -490,6 +508,23 @@ def convert_to_rgb(input):
     return input
 
 
+def predict(generator, test_data, ckpt_path):
+    """Generate images from test data.
+
+    Args:
+        generator: The generator model.
+        test_data: The test dataset.
+        ckpt_path: The checkpoint path.
+    """
+    checkpoint = tf.train.Checkpoint(generator=generator)
+
+    # Restore model.
+    checkpoint.restore(ckpt_path)
+
+    for image, target_image in test_data.take(20):
+        generate_image(generator, image, target_image)
+
+
 if __name__ == "__main__":
     training_data, test_data = load_data("maps")
 
@@ -507,4 +542,8 @@ if __name__ == "__main__":
 
     generator = Generator()
     discriminator = Discriminator()
+
     train(training_data, test_data, generator, discriminator)
+
+    predict(generator, test_data,
+            tf.train.latest_checkpoint(CHECKPOINT_PATH))
