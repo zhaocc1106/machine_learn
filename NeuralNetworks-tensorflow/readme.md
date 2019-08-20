@@ -29,6 +29,9 @@
     * dcgan.py-(使用fashion mnist数据集训练一个深度卷积对抗生成网络)
     * dgcan.gif-(记录dcgan训练过程中生成的图片的gif)
     * pix2pix.py-(pix2pix模型)
+    * pix2pix_2d_map_to_satellite_map.png-(pix2pix模型训练的2d地图向卫星地图的转换效果)
+    * pix2pix_satellite_map_to_2d_map.png-(pix2pix模型训练的卫星地图向2d地图的转换效果)
+    * pix2pix_shoes_to_edge.png-(pix2pix模型训练的从真实鞋的图片向轮廓的转换效果)
 5. image_net_origin_files目录<br>
     * 从ImageNet下载下来的几个分类图片的urls文件，每个分类大概有1000个图片
     * 下载器会把原始图片保存在该目录
