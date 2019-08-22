@@ -194,7 +194,7 @@ if __name__=="__main__":
         optimizer=tf.train.AdamOptimizer(learning_rate=0.001),
         scale=0.01
     )
-    mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+    mnist = input_data.read_data_sets("datas/MNIST_data/", one_hot=True)
     x_train, x_test = autoEncoder.standard_data(mnist.train.images,
                                                 mnist.test.images)
     print("x_train shape:")

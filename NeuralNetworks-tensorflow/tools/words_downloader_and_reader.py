@@ -23,7 +23,7 @@ def maybe_download(filename):
 
     :param filename: The file name.
     """
-    dir_path = "../words_data/"
+    dir_path = "../datas/"
     if not os.path.exists(dir_path):
         os.mkdir(dir_path)
     file_path = dir_path + filename
@@ -41,7 +41,7 @@ def read_data(filename):
     :return:
         The data array.
     """
-    file_path = "../words_data/" + filename
+    file_path = "../datas/" + filename
     with zipfile.ZipFile(file_path) as f:
         data = tf.compat.as_str(f.read(f.namelist()[0])).split()
     return data

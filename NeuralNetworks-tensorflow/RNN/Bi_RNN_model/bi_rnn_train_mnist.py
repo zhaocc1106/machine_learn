@@ -24,7 +24,7 @@ def load_mnist_data():
     :return: mnist data.
     """
     print("load_mnist_data")
-    mnist = input_data.read_data_sets("../../MNIST_data/", one_hot=True)
+    mnist = input_data.read_data_sets("../../datas/MNIST_data/", one_hot=True)
     return mnist
 
 

@@ -14,8 +14,10 @@
     * transfer_learning目录-(transfer learning模型)<br>
         * simple_transfer_learning.py-(使用tf hub的模型实现迁移学习模型，并且分类flowers数据集)
         * transfer_learning.py-(使用keras application实现迁移学习模型，并且分类dogs_vs_cats数据集)
-2. datasets_learn目录-(tf.data用法学习)<br>
-    * practice.py-(实践测试tf.data的用法，包括迭代器使用、解析tfRecords数据、解析csv数据、解析image数据等)
+2. datas目录-(数据集)<br>
+    * MNIST_data-(手写识别训练和测试数据)
+    * sketch_photo-(素描与证件照片数据集，用于训练photo2sketch模型)
+    * text8.zip-(words_vec模型使用的训练语言数据)
 3. estimator_learn目录-(Estimator模块学习)
     * census_data_download.py-(下载census_data)
     * DNN_classifier.py-(学习使用tensorflow的feature_columns和DNN_classifier
@@ -28,6 +30,9 @@
     * vcae_class_9.png-(指定类型为9生成的高斯分布对应的cvae生成器输出)
     * dcgan.py-(使用fashion mnist数据集训练一个深度卷积对抗生成网络)
     * dgcan.gif-(记录dcgan训练过程中生成的图片的gif)
+    * photo2sketch.py-(photo2sketch模型)
+    * photo2sketch_01.png-(photo2sketch训练的证件照向素描的转换效果)
+    * photo2sketch_02.png-(photo2sketch训练的证件照向素描的转换效果)
     * pix2pix.py-(pix2pix模型)
     * pix2pix_2d_map_to_satellite_map.png-(pix2pix模型训练的2d地图向卫星地图的转换效果)
     * pix2pix_satellite_map_to_2d_map.png-(pix2pix模型训练的卫星地图向2d地图的转换效果)
@@ -37,10 +42,9 @@
     * 下载器会把原始图片保存在该目录
 6. Keras_Learn-(学习使用keras)
     * KerasCNN.py-(使用mnist数据集训练一个keras写的cnn模型)
-7. MNIST_data目录-(手写识别训练和测试数据)<br>
-8. model_saver目录-(模型训练结果保存)<br>
+7. model_saver目录-(模型训练结果保存)<br>
     * 保存各个模型的model saver数据文件
-9. plots目录-(训练结果的plots图片)<br>
+8. plots目录-(训练结果的plots图片)<br>
     * Bi_RNN_train_mnist_50_epochs.png-(mnist训练双向RNN 50个epochs)
     * CIFAR10-CNN.png-(cifar10数据训练cnn网络)
     * cifar10_train_alex_net_top_1_100_epochs.png-
@@ -65,12 +69,12 @@
     * simple_transfer_learning_results.png-(使用flowers数据训练迁移学习的结果展示)
     * softmax_regression.png-(mnist训练softmax回归分类模型)
     * words2vec_by_skip_gram.png-(skip-gram算法训练出的words向量分布图)
-10. reinforcement_learning目录-深度强化学习<br>
+9. reinforcement_learning目录-深度强化学习<br>
     * grid_world.py-(grid_world游戏模型)
     * policy_network_for_cart_pole.py-(构建强化学习策略网络模型来玩cart_pole游戏)
     * value_network_for_grid_world.py-(构建强化学习估值网络Deep Q-learning
     network来玩grid_world游戏)
-11. RNN目录-(RNN模型)<br>
+10. RNN目录-(RNN模型)<br>
     * Bi_RNN_model目录-(双向RNN模型)<br>
         * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
     * RNN_ptb_model目录-(使用LSTM训练的Ptb 模型)<br>
@@ -79,6 +83,8 @@
         * ptb_model_tensor_board.png-(tensor board画出ptb model graph图)
     * RNN_Word2Vec目录-(使用skip-gram算法实现word2vec)<br>
         * word2vec_by_skip_gram.py-(使用skip-gram算法实现word2vec模型)
+11. tf_datasets_learn目录-(tf.data用法学习)<br>
+    * practice.py-(实践测试tf.data的用法，包括迭代器使用、解析tfRecords数据、解析csv数据、解析image数据等)
 12. tools目录-(工具包)<br>
     * bz2_decompress.py-(bz2文件自动检索解压器)
     * image_net_downloader.py-(image_net图片下载器，支持多线程)
@@ -87,6 +93,5 @@
     alex_net模型读取image_net数据时使用的该reader)
     * image_net_tf_records_writer.py-(将image_net图片转成tensor并保存到tfRecords中)
     * words_downloader_and_reader.py-(word2vec使用到的words downloader and reader)
-13. words_data目录-(words_vec模型使用的训练语言数据)<br>
-14. MLP.py-(简单多层全连接神经网络分类器)<br>
-15. softmax_regression.py-(根据softmax 回归的简单分类器)<br>
+13. MLP.py-(简单多层全连接神经网络分类器)<br>
+14. softmax_regression.py-(根据softmax 回归的简单分类器)<br>

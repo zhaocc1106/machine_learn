@@ -23,7 +23,8 @@ dcgan.py
 
 
 ## pix2pix模型
-pix2pix.py
+pix2pix.py<br>
+photo2sketch.py
 ### 参考
 [Image-to-Image Translation with Conditional Adversarial Networks论文](https://arxiv.org/abs/1611.07004)<br>
 [keras实现](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/r2/tutorials/generative/pix2pix.ipynb#scrollTo=0FMYgY_mPfTi)<br>
