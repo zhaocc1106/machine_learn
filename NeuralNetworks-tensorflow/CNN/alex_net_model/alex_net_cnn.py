@@ -509,5 +509,5 @@ if __name__ == "__main__":
                     epoch_train_size=10000,
                     test_sample_size=1000)
     plot_accuracy(validation_accuracys)
-    network.predict("../../image_net_origin_files/dog/dog_419.jpg")
+    network.predict("../../datas/image_net_origin_files/dog/dog_419.jpg")
     """

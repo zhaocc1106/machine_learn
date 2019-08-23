@@ -1,5 +1,5 @@
 # Origin image files.
-image_net_origin_files/*/*.jpg
+datas/image_net_origin_files/*/*.jpg
 
 # Ptb data files.
 RNN/RNN_ptb_model/simple-examples/*

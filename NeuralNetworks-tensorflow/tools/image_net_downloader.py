@@ -13,7 +13,7 @@ import threading
 import math
 import shutil
 
-image_data_dir = "../image_net_origin_files/"
+image_data_dir = "../datas/image_net_origin_files/"
 
 
 def set_proxy():

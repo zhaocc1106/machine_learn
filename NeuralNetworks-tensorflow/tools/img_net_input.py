@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 
 # Show chinese normally.
 plt.rcParams["font.sans-serif"] = ["SimHei"]
-image_net_data_path = "../image_net_origin_files/"
+image_net_data_path = "../datas/image_net_origin_files/"
 useless_image_array = cv2.imread(image_net_data_path + "bear/bear_14.jpg")
 training_images = []
 test_images = []
@@ -254,7 +254,7 @@ init
         reshape = tf.cast(img, tf.float32)
         crop_img = tf.random_crop(reshape, [224, 224, 3])
         # Save crop img to file.
-        # cv2.imwrite("../image_net_origin_files/tmp/bear_0_crop.jpg",
+        # cv2.imwrite("../datas/image_net_origin_files/tmp/bear_0_crop.jpg",
         # crop_img.eval())
         if augmentation:
             h_flip_img = tf.image.random_flip_left_right(crop_img)
@@ -285,7 +285,7 @@ init
 
 
 if __name__ == "__main__":
-    # img = img2tensor("../image_net_origin_files/bear/bear_14.jpg")
+    # img = img2tensor("../datas/image_net_origin_files/bear/bear_14.jpg")
     init_img_net_data(2, False)
     image_training, label_training = load_image_data(False, 10)
     print("image_training shape:")

@@ -327,11 +327,11 @@ def load_image_files_test(sess):
 
     # A vector of filenames.
     filenames = tf.constant(
-        ["../image_net_origin_files/person/person_0.jpg",
-         "../image_net_origin_files/person/person_20.jpg",
-         "../image_net_origin_files/person/person_80.jpg",
-         "../image_net_origin_files/person/person_120.jpg",
-         "../image_net_origin_files/person/person_160.jpg"])
+        ["../datas/image_net_origin_files/person/person_0.jpg",
+         "../datas/image_net_origin_files/person/person_20.jpg",
+         "../datas/image_net_origin_files/person/person_80.jpg",
+         "../datas/image_net_origin_files/person/person_120.jpg",
+         "../datas/image_net_origin_files/person/person_160.jpg"])
 
     # `labels[i]` is the label for the image in `filenames[i].
     labels = tf.constant([0, 1, 2, 3, 4])
@@ -386,11 +386,11 @@ def load_images_with_py_func_test(sess):
 
     # A vector of filenames.
     filenames = tf.constant(
-        ["../image_net_origin_files/person/person_0.jpg",
-         "../image_net_origin_files/person/person_20.jpg",
-         "../image_net_origin_files/person/person_80.jpg",
-         "../image_net_origin_files/person/person_120.jpg",
-         "../image_net_origin_files/person/person_160.jpg"])
+        ["../datas/image_net_origin_files/person/person_0.jpg",
+         "../datas/image_net_origin_files/person/person_20.jpg",
+         "../datas/image_net_origin_files/person/person_80.jpg",
+         "../datas/image_net_origin_files/person/person_120.jpg",
+         "../datas/image_net_origin_files/person/person_160.jpg"])
 
     # `labels[i]` is the label for the image in `filenames[i].
     labels = tf.constant([0, 1, 2, 3, 4])
@@ -490,27 +490,27 @@ if __name__ == "__main__":
     # tf_record_writer = tf.python_io.TFRecordWriter(path="./test.tfRecords")
     # save_data_into_tf_records(
     #     image_file=
-    #     "../image_net_origin_files/person/person_0.jpg",
+    #     "../datas/image_net_origin_files/person/person_0.jpg",
     #     image_label=0,
     #     tf_records_writer=tf_record_writer
     # )
     # save_data_into_tf_records(
-    #     image_file="../image_net_origin_files/person/person_20.jpg",
+    #     image_file="../datas/image_net_origin_files/person/person_20.jpg",
     #     image_label=1,
     #     tf_records_writer=tf_record_writer
     # )
     # save_data_into_tf_records(
-    #     image_file="../image_net_origin_files/person/person_80.jpg",
+    #     image_file="../datas/image_net_origin_files/person/person_80.jpg",
     #     image_label=2,
     #     tf_records_writer=tf_record_writer
     # )
     # save_data_into_tf_records(
-    #     image_file="../image_net_origin_files/person/person_120.jpg",
+    #     image_file="../datas/image_net_origin_files/person/person_120.jpg",
     #     image_label=3,
     #     tf_records_writer=tf_record_writer
     # )
     # save_data_into_tf_records(
-    #     image_file="../image_net_origin_files/person/person_160.jpg",
+    #     image_file="../datas/image_net_origin_files/person/person_160.jpg",
     #     image_label=4,
     #     tf_records_writer=tf_record_writer
     # )

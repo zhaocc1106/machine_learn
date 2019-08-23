@@ -30,7 +30,7 @@ labels = {"bear": 0,
           "person": 8,
           "tree": 9}
 tf_records_dir = "/tmp/image_net_records_files/"
-image_net_origin_files_dir = "../image_net_origin_files/"
+image_net_origin_files_dir = "../datas/image_net_origin_files/"
 useless_image_array = cv2.imread(image_net_origin_files_dir + "bear/bear_14.jpg")
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 IMAGE_SIZE = 300
