@@ -438,7 +438,7 @@ if __name__ == "__main__":
 
         # train_writer = tf.summary.FileWriter("./")
         with tf.train.MonitoredTrainingSession(
-                checkpoint_dir = "../../model_saver/RNN_ptb_model") as sess:
+                checkpoint_dir = "../../out/model_saver/RNN_ptb_model") as sess:
             # tf.global_variables_initializer().run(session=sess)
             tf.train.start_queue_runners(sess=sess)
             for i in range(config.max_max_epoch):

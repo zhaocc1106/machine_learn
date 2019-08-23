@@ -47,7 +47,7 @@ class Config(object):
     num_episodes = 10000
     h_size = 512
     tvars_update_eta = 0.001
-    path = "../model_saver/reinforcement_learning/value_net_model/"
+    path = "../out/model_saver/reinforcement_learning/value_net_model/"
     update_freq = 4
     p_start_random = 1.0
     p_end_random = 0.1

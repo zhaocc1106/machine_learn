@@ -13,7 +13,7 @@ cvae.py
 [正态分布分位数表](https://blog.csdn.net/lanchunhui/article/details/51754055)
 
 ## Generative Adversarial Network模型
-dcgan.py
+GAN.dcgan.py
 ### 参考
 [Generative Adversarial Nets论文](https://arxiv.org/pdf/1406.2661.pdf)<br>
 [Deep convolutional generative adversarial network论文](https://arxiv.org/pdf/1511.06434.pdf)<br>
@@ -23,8 +23,8 @@ dcgan.py
 
 
 ## pix2pix模型
-pix2pix.py<br>
-photo2sketch.py
+GAN.pix2pix.py<br>
+GAN.photo2sketch.py
 ### 参考
 [Image-to-Image Translation with Conditional Adversarial Networks论文](https://arxiv.org/abs/1611.07004)<br>
 [keras实现](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/r2/tutorials/generative/pix2pix.ipynb#scrollTo=0FMYgY_mPfTi)<br>

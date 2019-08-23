@@ -27,7 +27,7 @@ import tools.img_net_tf_records_reader as img_net_reader
 
 data_dir = "/tmp/cifar10_data/cifar-10-batches-bin"
 # wget http://download.tensorflow.org/models/resnet_v1_101_2016_08_28.tar.gz
-pre_trained_ckpt = "../../model_saver/resnet_model/pre-trained_model/resnet_v1_101.ckpt"
+pre_trained_ckpt = "../../out/model_saver/resnet_model/pre-trained_model/resnet_v1_101.ckpt"
 
 
 def load_image_datas(batch_size, data_type="cifar10"):
@@ -224,7 +224,7 @@ class Network(object):
         writer = tf.summary.FileWriter(tensorboad_path, sess.graph)
 
         # model saver.
-        saver_path = os.path.join("../../model_saver/resnet_model", "res" +
+        saver_path = os.path.join("../../out/model_saver/resnet_model", "res" +
                                   self.arch,
                                   time.strftime('%Y-%m-%d-%H-%M'))
         if not os.path.exists(saver_path):

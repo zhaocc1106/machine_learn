@@ -413,9 +413,9 @@ class Network(object):
                         print("Accuracy not upgrade after 10 epochs. Adjust "
                               "the eta. Now eta:{0}".format(eta))
 
-        if not os.path.exists("../../model_saver/alex_net_model"):
-            os.mkdir("../../model_saver/alex_net_model")
-        model_saver.save(sess, "../../model_saver/alex_net_model/alex_net.ckpt",
+        if not os.path.exists("../../out/model_saver/alex_net_model"):
+            os.mkdir("../../out/model_saver/alex_net_model")
+        model_saver.save(sess, "../../out/model_saver/alex_net_model/alex_net.ckpt",
                          global_step=steps)
         return test_accuracys
 

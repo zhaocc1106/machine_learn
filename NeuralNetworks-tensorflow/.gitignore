@@ -16,4 +16,4 @@ RNN/RNN_ptb_model/simple-examples/*
 *.npy
 
 # Estimators model saver.
-model_saver/estimators
+out/model_saver/estimators

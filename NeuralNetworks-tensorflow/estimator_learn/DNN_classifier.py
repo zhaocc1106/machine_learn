@@ -158,7 +158,7 @@ def contrib_learn_classifier_test():
         feature_columns=feature_columns,
         hidden_units=[100, 100],
         config=learn.RunConfig(tf_random_seed=1,
-                               model_dir="../model_saver/estimators/"
+                               model_dir="../out/model_saver/estimators/"
                                          "DNN_classifier_01"),
         # optimizer=optimizer_exp_decay
     )
@@ -210,7 +210,7 @@ def estimator_classifier_test():
         hidden_units=[100, 100],
         n_classes=3,
         config=tf.estimator.RunConfig(
-            model_dir="../model_saver/estimators/DNN_classifer_02",
+            model_dir="../out/model_saver/estimators/DNN_classifer_02",
             tf_random_seed=1
         )
     )
