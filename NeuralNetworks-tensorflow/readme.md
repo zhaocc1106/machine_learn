@@ -79,6 +79,10 @@
 8. RNN目录-(RNN模型)<br>
     * Bi_RNN_model目录-(双向RNN模型)<br>
         * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
+    * quick_draw目录-(你画我猜游戏模型)<br>
+        * create_dataset.py-(将quick_draw原始数据转换为tfRecords格式)
+        * train_model.py-(构建bi-rnn模型对quick_draw数据进行分类)
+        * quick_draw_classify.png-(一次预测结果，此时模型的accuracy已经到到72%)
     * RNN_ptb_model目录-(使用LSTM训练的Ptb 模型)<br>
         * ptb_language_model_by_lstm.py-(构建LSTM网络训练ptb模型)
         * reader.py-(words读取者)
