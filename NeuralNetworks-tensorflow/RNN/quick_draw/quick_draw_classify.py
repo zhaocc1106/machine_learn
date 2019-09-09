@@ -44,7 +44,8 @@ def get_input_fn(mode, tfrecord_pattern, batch_size):
 
     Args:
      mode: one of tf.contrib.learn.ModeKeys.{TRAIN, INFER, EVAL}
-     tfrecord_pattern: path to a TF record file created using create_dataset.py.
+     tfrecord_pattern: path to a TF record file created using
+     create_dataset_for_classify.py.
      batch_size: the batch size to output.
 
     Returns:
@@ -309,6 +310,11 @@ def plot_quick_draw(inks, cls_name, *sub_plt_place):
         cls_name: The class name.
         sub_plt_place: The subplot place.
     """
+    print("inks_max: \n", str(np.max(inks[:, 0])), " ",  str(np.max(inks[:,
+                                                                    1])))
+    print("inks_min: \n", str(np.min(inks[:, 0])), " ", str(np.min(inks[:,
+                                                                   1])))
+
     inks_num = inks.shape[0] + 1  # The total inks number.
     plt_ink = np.zeros((inks_num, 3))
 
@@ -448,7 +454,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--steps",
         type=int,
-        default=1000000,
+        default=686245,
         help="Number of training steps.")
     parser.add_argument(
         "--batch_size",

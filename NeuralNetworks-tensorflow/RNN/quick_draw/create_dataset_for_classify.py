@@ -13,7 +13,7 @@ The tensorflow example will contain 3 features:
 
 It creates disjoint training and evaluation sets.
 
-python create_dataset.py \
+python create_dataset_for_classify.py \
   --ndjson_path ${HOME}/ndjson \
   --output_path ${HOME}/tfrecord
 
