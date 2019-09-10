@@ -80,7 +80,13 @@
     * Bi_RNN_model目录-(双向RNN模型)<br>
         * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
     * quick_draw目录-(你画我猜游戏模型)<br>
-        * create_dataset_for_classify.py-(将quick_draw原始数据转换为tfRecords格式)
+        * auto_draw.py-(构建自动quick-draw模型)
+        * auto_draw_bird.png-(auto-draw模型生成的鸟)
+        * auto_draw_butterfly-(auto-draw模型生成的蝴蝶)
+        * create_dataset_for_auto_draw.py-(将quick_draw原始数据转换成训练auto_draw
+        模型的tfRecord文件)
+        * create_dataset_for_classify.py-(将quick_draw
+        原始数据转换为训练classify模型的tfRecords文件)
         * quick_draw_classify.py-(构建bi-rnn模型对quick_draw数据进行分类)
         * quick_draw_classify.png-(一次预测结果，此时模型的accuracy已经到到72%)
     * RNN_ptb_model目录-(使用LSTM训练的Ptb 模型)<br>

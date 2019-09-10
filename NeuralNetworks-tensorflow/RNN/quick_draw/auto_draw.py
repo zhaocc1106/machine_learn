@@ -11,6 +11,7 @@ Date:    2019/9/4 23:38
 # common libs.
 import os
 import time
+import shutil
 
 # 3rd-part libs.
 import numpy as np
@@ -22,7 +23,8 @@ tf.enable_eager_execution()
 UNITS = 1024  # Number of RNN units
 EPOCHS = 100  # The epoch number.
 BATCH_SIZE = 8  # The batch size.
-CHECKPOINT_PATH = os.path.join("/tmp/autodraw_model",
+MODEL_DIR = "/tmp/autodraw_model"  # Model dir.
+CHECKPOINT_PATH = os.path.join(MODEL_DIR,
                                "ckpt")  # Name of the checkpoint files
 
 
@@ -61,7 +63,7 @@ def load_training_data(tfrecord_pattern, batch_size):
     return dataset
 
 
-def plot_quick_draw(inks, cls_name):
+def plot_quick_draw(inks, cls_name, *sub_plt_place):
     """Plot the quick drawing.
 
     Args:
@@ -78,11 +80,10 @@ def plot_quick_draw(inks, cls_name):
         plt_ink[i, -1] = inks[i - 1, -1]
 
     # Find the end points.
-    end_points = np.where(plt_ink[:, -1] >= plt_ink[:, -2])[0]
+    end_points = np.where(plt_ink[:, -1] == 1.0)[0]
 
     # Plot.
-    plt.figure()
-    plt.subplot()
+    plt.subplot(*sub_plt_place)
     # print(end_points)
     for i, end_pt in enumerate(end_points):
         if i == 0:
@@ -91,7 +92,6 @@ def plot_quick_draw(inks, cls_name):
             plt.plot(plt_ink[end_points[i - 1] + 1: end_pt + 1, 0],
                      plt_ink[end_points[i - 1] + 1: end_pt + 1, 1])
     plt.title(str(cls_name))
-    plt.show()
 
 
 class Model(tf.keras.Model):
@@ -168,6 +168,9 @@ def train(model, dataset):
         model: The auto-draw model.
         dataset: The dataset generator.
     """
+    if os.path.exists(MODEL_DIR):
+        shutil.rmtree(MODEL_DIR)
+
     # Using adam optimizer with default arguments
     optimizer = tf.train.AdamOptimizer()
 
@@ -210,8 +213,8 @@ def train(model, dataset):
                                                          batch,
                                                          loss))
 
-            # Only train 3000 step at now.
-            if batch >= 3000:
+            # Only train 10000 step at now.
+            if batch >= 10000:
                 break
 
         # saving (checkpoint) the model every epoch
@@ -222,7 +225,7 @@ def train(model, dataset):
         print(
             'Time taken for 1 epoch {} sec\n'.format(time.time() - start_time))
 
-        # Only train 3000 step at now.
+        # Only train 10000 step at now.
         break
 
 
@@ -239,8 +242,9 @@ def auto_draw(ink_num):
 
     model.reset_states()
 
+    # First ink.
     inks = np.expand_dims(first_ink[0, 0, :], 0)
-    plot_quick_draw(first_ink[0], "school_bus")
+    # print(inks)
     ink_num = first_ink.shape[1]
     # print(ink_num)
     input = inks
@@ -249,32 +253,46 @@ def auto_draw(ink_num):
 
     for i in range(ink_num):
         pred = model(input).numpy()
-        print(pred)
-        inks = np.concatenate([inks, pred])
-        input = np.expand_dims(pred, 0)
 
+        # Convert (x_delta, y_delta, no_end_prob, end_prob) to (x_delta,
+        # y_delta, end_flag)
+        pred_ = np.zeros(shape=(1, 3))
+        pred_[0, 0: 2] = pred[0, 0: 2]
+        if pred[0, 2] < pred[0, 3]:
+            pred_[0, 2] = 1.0
+
+        inks = np.concatenate([inks, pred_])
+        input = np.expand_dims(pred_, 0)
+        input = input.astype(np.float32)
+
+    # Plot quick draw.
+    plt.figure()
+    plot_quick_draw(np.expand_dims(first_ink[0, :, :], 0)[0], "real_butterfly",
+                    1, 2, 1)
+    plt.axis('off')
     inks = np.expand_dims(inks, 0)
-    plot_quick_draw(inks[0], "school_bus")
+    plot_quick_draw(inks[0], "pred_butterfly", 1, 2, 2)
+    plt.axis('off')
+    plt.show()
 
 
 if __name__ == "__main__":
-    dataset = load_training_data(
-        "/tmp/autodraw_data/training.tfrecord-school_bus", BATCH_SIZE)
+    for i in range(10):
+        dataset = load_training_data(
+            "/tmp/autodraw_data/training.tfrecord-butterfly", BATCH_SIZE)
 
-    """
-    dataset = dataset.make_one_shot_iterator()
-    features = dataset.next()
-    for i in range(8):
-        np_ink = features["ink"].numpy()[i, :]
-        np_ink = np.reshape(np_ink, (-1, 3))
-        plot_quick_draw(np_ink, "airplane")
-    """
+        """
+           dataset = dataset.make_one_shot_iterator()
+           features = dataset.next()
+           for i in range(8):
+               np_ink = features["ink"].numpy()[i, :]
+               np_ink = np.reshape(np_ink, (-1, 3))
+               plot_quick_draw(np_ink, "airplane")
+        """
 
-    model = Model(UNITS)
-    model.build(tf.TensorShape([BATCH_SIZE, None, 3]))
-    model.summary()
-    train(model, dataset)
+        model = Model(UNITS)
+        model.build(tf.TensorShape([BATCH_SIZE, None, 3]))
+        model.summary()
+        train(model, dataset)
 
-    auto_draw(50)
-    auto_draw(50)
-    auto_draw(50)
+        auto_draw(50)

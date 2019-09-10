@@ -174,12 +174,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ndjson_path",
         type=str,
-        default="\\gcloud\\rnn_tutorial_data",
+        default="/tmp/gcloud/rnn_tutorial_data",
         help="Directory where the ndjson files are stored.")
     parser.add_argument(
         "--output_path",
         type=str,
-        default="\\tmp\\autodraw_data",
+        default="/tmp/autodraw_data",
         help="Directory where to store the output TFRecord files.")
 
     FLAGS, unparsed = parser.parse_known_args()

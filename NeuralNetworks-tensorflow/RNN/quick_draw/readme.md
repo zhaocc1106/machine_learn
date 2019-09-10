@@ -33,4 +33,5 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 最后运行create_dataset_for_classify.py将原始数据转换为tfRecords文件，可以添加参数指定目录。
 
 ## 训练模型
-将tfRecords文件放到\tmp\quickdraw_data\目录下后，可以直接运行quick_draw_classify.py进行训练，默认训练100w步，最后生成训练结果图片，如quick_draw_classify.png。
+将tfRecords文件放到/tmp/quickdraw_data/目录下后，可以直接运行quick_draw_classify.py
+进行训练，默认训练100w步，最后生成训练结果图片，如quick_draw_classify.png。

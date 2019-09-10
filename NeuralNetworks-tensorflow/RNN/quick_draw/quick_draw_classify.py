@@ -389,22 +389,22 @@ if __name__ == "__main__":
     parser.add_argument(
         "--training_data",
         type=str,
-        default="\\tmp\\quickdraw_data\\training.tfrecord-*",
+        default="/tmp/quickdraw_data/training.tfrecord-*",
         help="Path to training data (tf.Example in TFRecord format)")
     parser.add_argument(
         "--eval_data",
         type=str,
-        default="\\tmp\\quickdraw_data\\eval.tfrecord-*",
+        default="/tmp/quickdraw_data/eval.tfrecord-*",
         help="Path to evaluation data (tf.Example in TFRecord format)")
     parser.add_argument(
         "--pred_data",
         type=str,
-        default="\\tmp\\quickdraw_data\\eval.tfrecord-*",
+        default="/tmp/quickdraw_data/eval.tfrecord-*",
         help="Path to prediction data (tf.Example in TFRecord format)")
     parser.add_argument(
         "--classes_file",
         type=str,
-        default="\\tmp\\quickdraw_data\\training.tfrecord.classes",
+        default="/tmp/quickdraw_data/training.tfrecord.classes",
         help="Path to a file with the classes - one class per line")
     parser.add_argument(
         "--num_layers",
@@ -464,7 +464,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model_dir",
         type=str,
-        default="\\tmp\\quickdraw_model",
+        default="/tmp/quickdraw_model",
         help="Path for storing the model checkpoints.")
     parser.add_argument(
         "--self_test",
