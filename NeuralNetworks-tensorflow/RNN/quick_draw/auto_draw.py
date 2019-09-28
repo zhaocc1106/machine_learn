@@ -12,6 +12,8 @@ Date:    2019/9/4 23:38
 import os
 import time
 import shutil
+import argparse
+import sys
 
 # 3rd-part libs.
 import numpy as np
@@ -21,8 +23,8 @@ import tensorflow as tf
 tf.enable_eager_execution()
 
 UNITS = 1024  # Number of RNN units
-EPOCHS = 100  # The epoch number.
-BATCH_SIZE = 8  # The batch size.
+EPOCHS = 10  # The epoch number.
+BATCH_SIZE = 20  # The batch size.
 MODEL_DIR = "/tmp/autodraw_model"  # Model dir.
 CHECKPOINT_PATH = os.path.join(MODEL_DIR,
                                "ckpt")  # Name of the checkpoint files
@@ -63,6 +65,150 @@ def load_training_data(tfrecord_pattern, batch_size):
     return dataset
 
 
+class Model(tf.keras.Model):
+    def __init__(self, units):
+        super(Model, self).__init__()
+        self.units = units
+
+        self.fc0 = tf.keras.layers.Dense(1024)
+        self.dropout0 = tf.keras.layers.Dropout(0.5)
+
+        if tf.test.is_gpu_available():
+            self.gru = tf.keras.layers.CuDNNGRU(self.units,
+                                                return_sequences=True,
+                                                recurrent_initializer='glorot_uniform',
+                                                stateful=True)
+        else:
+            self.gru = tf.keras.layers.GRU(self.units,
+                                           return_sequences=True,
+                                           recurrent_activation='sigmoid',
+                                           recurrent_initializer='glorot_uniform',
+                                           stateful=True)
+
+        self.dropout1 = tf.keras.layers.Dropout(0.5)
+        self.fc1 = tf.keras.layers.Dense(1024)
+        self.dropout2 = tf.keras.layers.Dropout(0.5)
+        self.fc2 = tf.keras.layers.Dense(3)
+
+    def call(self, inks):
+        # output at every time step
+        # output shape == (batch_size, seq_length, hidden_size)
+        output = self.fc0(inks)
+        output = self.dropout0(output)
+        output = self.gru(output)
+        # print(output.shape)
+
+        # Add dnn.
+        # The prediction shape is (batch_size * seq_length, 3). [x_delta,
+        # y_delta, end_flag]
+        output = self.dropout1(output)
+        output = self.fc1(output)
+        output = self.dropout2(output)
+        delta_pred = tf.reshape(self.fc2(output), (-1, 3))
+        # print(delta_pred.shape)
+
+        # states will be used to pass at every step to the model while training
+        return delta_pred
+
+
+def loss_func(real, pred):
+    """The loss function.
+
+    Args:
+        real: The real value.
+        pred: The pred value.
+
+    Returns:
+        The loss.
+    """
+    # resolve real data.
+    real = np.reshape(real, (-1, 3))
+
+    # # (x_delta, y_delta)
+    # delta_real = real[:, 0: 2]
+    # delta_pred = pred[:, 0: 2]
+    #
+    # # (not_end_prob, end_prob)
+    # end_flag_real = real[:, 2].astype(np.int32)
+    # end_flag_pred = pred[:, 2: 4]
+    #
+    # loss = tf.losses.mean_squared_error(delta_real, delta_pred) + \
+    #        tf.losses.sparse_softmax_cross_entropy(end_flag_real, end_flag_pred)
+
+    return tf.losses.mean_squared_error(real, pred)
+
+
+first_batch_ink = []  # The first quick draw batch of every epoch.
+first_batch_shape = []  # The first quick draw batch shape of every epoch.
+
+
+def train(model, quick_draw_class):
+    """Train model.
+
+    Args:
+        model: The auto-draw model.
+        quick_draw_class: The quick draw class. The end of tfRecord file name.
+    """
+    file_path = "/tmp/autodraw_data/training.tfrecord-" + quick_draw_class
+    print(file_path)
+    dataset = load_training_data(file_path, BATCH_SIZE)
+
+    if os.path.exists(MODEL_DIR):
+        shutil.rmtree(MODEL_DIR)
+
+    # Using adam optimizer with default arguments
+    optimizer = tf.train.AdamOptimizer()
+
+    epoch_losses = []
+
+    for epoch in range(EPOCHS):
+        start_time = time.time()
+
+        for batch, data in enumerate(dataset):
+            if batch == 0:
+                global first_batch_ink, first_batch_shape
+                first_batch_ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 3))
+                first_batch_shape = data["shape"]
+
+            hidden = model.reset_states()  # reset the rnn state.
+
+            if data["ink"].shape[0] != BATCH_SIZE:
+                break
+
+            # Get ink input and target.
+            ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 3))
+            ink_input = ink[:, 0: -1]
+            ink_target = ink[:, 1:]
+
+            with tf.GradientTape() as tape:
+                # feeding the hidden state back into the model
+                # This is the interesting step
+                pred = model(ink_input)
+                # print("pred:\n", str(pred))
+                loss = loss_func(ink_target, pred)
+
+            grads = tape.gradient(loss, model.variables)
+            optimizer.apply_gradients(zip(grads, model.variables))
+
+            if batch % 100 == 0:
+                print('Epoch {} Batch {} Loss {}'.format(epoch + 1,
+                                                         batch,
+                                                         loss))
+
+        # saving (checkpoint) the model every epoch
+        if (epoch + 1) % 1 == 0:
+            model.save_weights(CHECKPOINT_PATH)
+
+        print('Epoch {} Loss {}'.format(epoch + 1, loss))
+        print(
+            'Time taken for 1 epoch {} sec\n'.format(time.time() - start_time))
+
+        auto_draw(quick_draw_class)
+
+        epoch_losses.append(loss)
+    return epoch_losses
+
+
 def plot_quick_draw(inks, cls_name, *sub_plt_place):
     """Plot the quick drawing.
 
@@ -71,6 +217,7 @@ def plot_quick_draw(inks, cls_name, *sub_plt_place):
         x_delta, y_delta, if_end).
         cls_name: The class name.
     """
+    inks[-1, -1] = 1.0
     inks_num = inks.shape[0] + 1  # The total inks number.
     plt_ink = np.zeros((inks_num, 3))
 
@@ -94,205 +241,92 @@ def plot_quick_draw(inks, cls_name, *sub_plt_place):
     plt.title(str(cls_name))
 
 
-class Model(tf.keras.Model):
-    def __init__(self, units):
-        super(Model, self).__init__()
-        self.units = units
-
-        if tf.test.is_gpu_available():
-            self.gru = tf.keras.layers.CuDNNGRU(self.units,
-                                                return_sequences=True,
-                                                recurrent_initializer='glorot_uniform',
-                                                stateful=True)
-        else:
-            self.gru = tf.keras.layers.GRU(self.units,
-                                           return_sequences=True,
-                                           recurrent_activation='sigmoid',
-                                           recurrent_initializer='glorot_uniform',
-                                           stateful=True)
-
-        self.fc0 = tf.keras.layers.Dense(4096)
-        self.fc1 = tf.keras.layers.Dense(4)
-
-    def call(self, inks):
-        # output at every time step
-        # output shape == (batch_size, seq_length, hidden_size)
-        output = self.gru(inks)
-        # print(output.shape)
-
-        # Add dnn.
-        # The prediction shape is (batch_size * seq_length, 4). [x_delta,
-        # y_delta, not_end_prob, end_prob]
-        output = self.fc0(output)
-        delta_pred = tf.reshape(self.fc1(output), (-1, 4))
-        # print(delta_pred.shape)
-
-        # states will be used to pass at every step to the model while training
-        return delta_pred
-
-
-def loss_func(real, pred):
-    """The loss function.
-
-    Args:
-        real: The real value.
-        pred: The pred value.
-
-    Returns:
-        The loss.
-    """
-    # resolve real data.
-    real = np.reshape(real, (-1, 3))
-
-    # (x_delta, y_delta)
-    delta_real = real[:, 0: 2]
-    delta_pred = pred[:, 0: 2]
-
-    # (not_end_prob, end_prob)
-    end_flag_real = real[:, 2].astype(np.int32)
-    end_flag_pred = pred[:, 2: 4]
-
-    loss = tf.losses.mean_squared_error(delta_real, delta_pred) + \
-           tf.losses.sparse_softmax_cross_entropy(end_flag_real, end_flag_pred)
-
-    return loss
-
-
-first_ink = []  # The first quick draw ink. Only train one quick draw at now.
-
-
-def train(model, dataset):
-    """Train model.
-
-    Args:
-        model: The auto-draw model.
-        dataset: The dataset generator.
-    """
-    if os.path.exists(MODEL_DIR):
-        shutil.rmtree(MODEL_DIR)
-
-    # Using adam optimizer with default arguments
-    optimizer = tf.train.AdamOptimizer()
-
-    for epoch in range(EPOCHS):
-        start_time = time.time()
-
-        for batch, data in enumerate(dataset):
-
-            # Only train one quick draw at now.
-            if batch == 0:
-                ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 3))
-                ink = ink[0, :, :]
-                ink = np.broadcast_to(ink, (BATCH_SIZE, ink.shape[0],
-                                            ink.shape[1]))
-                global first_ink
-                first_ink = ink
-
-            hidden = model.reset_states()
-
-            if data["ink"].shape[0] != BATCH_SIZE:
-                break
-
-            # Get ink input and target.
-            ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 3))
-            ink_input = first_ink[:, 0: -1]
-            ink_target = first_ink[:, 1:]
-
-            with tf.GradientTape() as tape:
-                # feeding the hidden state back into the model
-                # This is the interesting step
-                pred = model(ink_input)
-                # print("pred:\n", str(pred))
-                loss = loss_func(ink_target, pred)
-
-            grads = tape.gradient(loss, model.variables)
-            optimizer.apply_gradients(zip(grads, model.variables))
-
-            if batch % 100 == 0:
-                print('Epoch {} Batch {} Loss {}'.format(epoch + 1,
-                                                         batch,
-                                                         loss))
-
-            # Only train 10000 step at now.
-            if batch >= 10000:
-                break
-
-        # saving (checkpoint) the model every epoch
-        if (epoch + 1) % 1 == 0:
-            model.save_weights(CHECKPOINT_PATH)
-
-        print('Epoch {} Loss {}'.format(epoch + 1, loss))
-        print(
-            'Time taken for 1 epoch {} sec\n'.format(time.time() - start_time))
-
-        # Only train 10000 step at now.
-        break
-
-
-def auto_draw(ink_num):
+def auto_draw(quick_draw_class):
     """Quick draw.
 
     Args:
-        ink_num: The ink count.
+        quick_draw_class: The quick draw class.
+
     """
+
     model = Model(UNITS)
     model.build(tf.TensorShape([1, None, 3]))
     model.summary()
     model.load_weights(CHECKPOINT_PATH)
 
-    model.reset_states()
+    quick_draws = first_batch_ink
+    shape = first_batch_shape
+    #     print(shape)
 
-    # First ink.
-    inks = np.expand_dims(first_ink[0, 0, :], 0)
-    # print(inks)
-    ink_num = first_ink.shape[1]
-    # print(ink_num)
-    input = inks
-    input = np.expand_dims(input, 0)
-    input = input.astype(np.float32)
+    for batch_ind in range(BATCH_SIZE):
+        model.reset_states()
 
-    for i in range(ink_num):
-        pred = model(input).numpy()
-
-        # Convert (x_delta, y_delta, no_end_prob, end_prob) to (x_delta,
-        # y_delta, end_flag)
-        pred_ = np.zeros(shape=(1, 3))
-        pred_[0, 0: 2] = pred[0, 0: 2]
-        if pred[0, 2] < pred[0, 3]:
-            pred_[0, 2] = 1.0
-
-        inks = np.concatenate([inks, pred_])
-        input = np.expand_dims(pred_, 0)
+        inks = quick_draws[batch_ind, 0: 10, :]
+        # print(ink)
+        ink_num = shape[batch_ind][0] - 10
+        # print(ink_num)
+        input = inks
+        input = np.expand_dims(input, 0)
         input = input.astype(np.float32)
 
-    # Plot quick draw.
+        for i in range(ink_num):
+            pred = model(input).numpy()
+            pred_ = np.zeros(shape=(1, 3))
+            pred_[0, 0: 2] = pred[0, 0: 2]
+            if pred[0, 2] >= 0.5:
+                pred_[0, 2] = 1.0
+
+            inks = np.concatenate([inks, pred_])
+            input = np.expand_dims(pred_, 0)
+            input = input.astype(np.float32)
+
+        # Plot quick draw.
+        plt.figure()
+        # The real quick draw.
+        plot_quick_draw(np.expand_dims(quick_draws[batch_ind, :, :], 0)[0],
+                        quick_draw_class,
+                        1, 2, 1)
+        plt.axis('off')
+        # The predict quick draw.
+        inks = np.expand_dims(inks, 0)
+        plot_quick_draw(inks[0], quick_draw_class, 1, 2, 2)
+        plt.axis('off')
+        plt.show()
+
+
+def plot_losses(losses):
+    """Plot the losses of every epoch.
+
+    Args:
+        losses: The losses list.
+    """
     plt.figure()
-    plot_quick_draw(np.expand_dims(first_ink[0, :, :], 0)[0], "real_butterfly",
-                    1, 2, 1)
-    plt.axis('off')
-    inks = np.expand_dims(inks, 0)
-    plot_quick_draw(inks[0], "pred_butterfly", 1, 2, 2)
-    plt.axis('off')
+    plt.subplot()
+    x = np.arange(0, len(losses), 1)
+    plt.plot(x, losses, label='losses')
+    plt.xlabel("epoch")
+    plt.ylabel("losses")
+    plt.legend()
     plt.show()
 
 
+def main(argv):
+    del argv
+    model = Model(UNITS)
+    model.build(tf.TensorShape([BATCH_SIZE, None, 3]))
+    model.summary()
+    epoch_loss = train(model, str(FLAGS.quick_draw_class))
+    plot_losses(epoch_loss)
+
+
 if __name__ == "__main__":
-    for i in range(10):
-        dataset = load_training_data(
-            "/tmp/autodraw_data/training.tfrecord-butterfly", BATCH_SIZE)
+    parser = argparse.ArgumentParser()
+    parser.register("type", "bool", lambda v: v.lower() == "true")
+    parser.add_argument(
+        "--quick_draw_class",
+        type=str,
+        default="cow",
+        help="The quick draw class for training model.")
 
-        """
-           dataset = dataset.make_one_shot_iterator()
-           features = dataset.next()
-           for i in range(8):
-               np_ink = features["ink"].numpy()[i, :]
-               np_ink = np.reshape(np_ink, (-1, 3))
-               plot_quick_draw(np_ink, "airplane")
-        """
-
-        model = Model(UNITS)
-        model.build(tf.TensorShape([BATCH_SIZE, None, 3]))
-        model.summary()
-        train(model, dataset)
-
-        auto_draw(50)
+    FLAGS, unparsed = parser.parse_known_args()
+    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)

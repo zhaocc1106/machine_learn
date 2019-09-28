@@ -11,10 +11,6 @@ The tensorflow example will contain 3 features:
  class_index - the class index of the class for the example.
  ink - a length * dim vector of the ink.
 
-It creates disjoint training and evaluation sets.
-
-It creates disjoint dataset for every class.
-
 python create_dataset_for_classify.py \
   --ndjson_path ${HOME}/ndjson \
   --output_path ${HOME}/tfrecord
@@ -107,9 +103,7 @@ def plot_quick_draw(inks, cls_name):
     plt.show()
 
 
-def convert_data(trainingdata_dir,
-                 output_path,
-                 offset=0):
+def convert_data(trainingdata_dir, output_path):
     """Convert training data from ndjson files into tf.Example in tf.Record.
 
     Args:
@@ -128,6 +122,8 @@ def convert_data(trainingdata_dir,
             print("Converting {0}-{1}".format(i, filename))
 
         # Prepare tfRecord file writer.
+        if not os.path.exists(FLAGS.output_path):
+            os.mkdir(FLAGS.output_path)
         writer = tf.python_io.TFRecordWriter(output_path + "-" +
                                              filename.split(".")[0]
                                              .replace(" ", "_"))
@@ -164,8 +160,7 @@ def main(argv):
     del argv
     convert_data(
         FLAGS.ndjson_path,
-        os.path.join(FLAGS.output_path, "training.tfrecord"),
-        offset=0)
+        os.path.join(FLAGS.output_path, "training.tfrecord"))
 
 
 if __name__ == "__main__":

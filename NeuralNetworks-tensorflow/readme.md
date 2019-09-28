@@ -81,8 +81,9 @@
         * bi_rnn_train_mnist.py-(构建双向RNN网络，并使用mnist数据来测试)
     * quick_draw目录-(你画我猜游戏模型)<br>
         * auto_draw.py-(构建自动quick-draw模型)
-        * auto_draw_bird.png-(auto-draw模型生成的鸟)
-        * auto_draw_butterfly-(auto-draw模型生成的蝴蝶)
+        * autodraw_bicycle.png-(auto-draw模型生成的自行车)
+        * autodraw_cloud.png-(auto-draw模型生成的云彩)
+        * autodraw_school_bus.png-(auto-校车)
         * create_dataset_for_auto_draw.py-(将quick_draw原始数据转换成训练auto_draw
         模型的tfRecord文件)
         * create_dataset_for_classify.py-(将quick_draw
