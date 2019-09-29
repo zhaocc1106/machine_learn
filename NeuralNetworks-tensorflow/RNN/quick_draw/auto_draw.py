@@ -329,7 +329,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--quick_draw_class",
         type=str,
-        default="cow",
+        default="school_bus",
         help="The quick draw class for training model.")
 
     FLAGS, unparsed = parser.parse_known_args()
