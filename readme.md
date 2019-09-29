@@ -1,9 +1,7 @@
 # 机器学习和深度学习的各类算法的实现
-<div align="center">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/autodraw_school_bus.png"  height="330" width="495" alt="rnn-auto_draw">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify.png"  height="330" width="495" alt="rnn-quick_draw_classify">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/photo2sketch_01.png"  height="330" width="495" alt="gan-photo2sketch">
-</div>
+<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/autodraw_school_bus.png"  height="200" width="300" alt="rnn-auto_draw">
+<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify.png"  height="200" width="300" alt="rnn-quick_draw_classify">
+<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/photo2sketch_01.png"  height="200" width="300" alt="gan-photo2sketch">
 
 ## 快速开始
    IDE使用Pycharm，每一个目录当作一个pycharm工程。<br>
