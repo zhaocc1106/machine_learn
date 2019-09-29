@@ -21,10 +21,12 @@ GAN.dcgan.py
 [生成对抗网络——GAN](https://blog.csdn.net/leviopku/article/details/81292192)<br>
 [keras实现dcgan](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/r2/tutorials/generative/dcgan.ipynb#scrollTo=rF2x3qooyBTI)
 
-
 ## pix2pix模型
 GAN.pix2pix.py<br>
 GAN.photo2sketch.py
+### 训练结果
+![photo2sketch](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/photo2sketch_01.png)<br>
+![satellite_map_to_2d_map](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/pix2pix_satellite_map_to_2d_map.png)
 ### 参考
 [Image-to-Image Translation with Conditional Adversarial Networks论文](https://arxiv.org/abs/1611.07004)<br>
 [keras实现](https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/r2/tutorials/generative/pix2pix.ipynb#scrollTo=0FMYgY_mPfTi)<br>
