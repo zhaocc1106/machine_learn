@@ -36,6 +36,9 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 将tfRecords文件放到/tmp/quickdraw_data/目录下后，可以直接运行quick_draw_classify.py
 进行训练，默认训练100w步，最后生成训练结果图片，如quick_draw_classify.png。
 
+## 训练结果
+![quick_draw_classify](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify.png)
+
 # 自动涂鸦模型
 
 ## 模型
@@ -70,3 +73,6 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 将tfRecords文件放到/tmp/autodraw_data/目录下后，可以直接运行auto_draw.py，也可以指定涂鸦的类型，
 默认训练校车类型涂鸦。最后生成训练结果图片，如autodraw_school_bus.png，autodraw_cloud.png，
 autodraw_bicycle.png，右侧为根据左侧初始10笔画生成预测的涂鸦。
+
+# 训练结果
+![auto_draw_school_bus](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/autodraw_school_bus.png)
