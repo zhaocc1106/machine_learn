@@ -287,12 +287,12 @@ def auto_draw(quick_draw_class):
         plt.figure()
         # The real quick draw.
         plot_quick_draw(np.expand_dims(quick_draws[batch_ind, :, :], 0)[0],
-                        quick_draw_class,
+                        "real_" + quick_draw_class,
                         1, 2, 1)
         plt.axis('off')
         # The predict quick draw.
         inks = np.expand_dims(inks, 0)
-        plot_quick_draw(inks[0], quick_draw_class, 1, 2, 2)
+        plot_quick_draw(inks[0],  "pred_" + quick_draw_class, 1, 2, 2)
         plt.axis('off')
         plt.show()
 
