@@ -83,7 +83,7 @@
         * auto_draw.py-(构建自动quick-draw模型)
         * autodraw_bicycle.png-(auto-draw模型生成的自行车)
         * autodraw_cloud.png-(auto-draw模型生成的云彩)
-        * autodraw_school_bus.png-(auto-校车)
+        * autodraw_school_bus.png-(auto-draw模型生成的校车)
         * create_dataset_for_auto_draw.py-(将quick_draw原始数据转换成训练auto_draw
         模型的tfRecord文件)
         * create_dataset_for_classify.py-(将quick_draw
