@@ -9,25 +9,26 @@ Date:    2019/9/4 23:38
 """
 
 # common libs.
-import os
-import time
-import shutil
 import argparse
+import os
+import shutil
 import sys
+import time
 
 # 3rd-part libs.
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
 tf.enable_eager_execution()
 
 UNITS = 1024  # Number of RNN units
-EPOCHS = 10  # The epoch number.
-BATCH_SIZE = 20  # The batch size.
+EPOCHS = 20  # The epoch number.
+BATCH_SIZE = 50  # The batch size.
 MODEL_DIR = "/tmp/autodraw_model"  # Model dir.
 CHECKPOINT_PATH = os.path.join(MODEL_DIR,
                                "ckpt")  # Name of the checkpoint files
+MODEL_H5_PATH = os.path.join(MODEL_DIR, "autodraw.h5")
 
 
 def load_training_data(tfrecord_pattern, batch_size):
@@ -55,7 +56,14 @@ def load_training_data(tfrecord_pattern, batch_size):
             parsed_features["ink"])
         return parsed_features
 
-    dataset = tf.data.TFRecordDataset(tfrecord_pattern)
+    dataset = tf.data.TFRecordDataset.list_files(tfrecord_pattern)
+    # Preprocesses 10 files concurrently and interleaves records from each file.
+    dataset = dataset.shuffle(buffer_size=10)
+    dataset = dataset.repeat()
+    dataset = dataset.interleave(
+        tf.data.TFRecordDataset,
+        cycle_length=10,
+        block_length=1)
     dataset = dataset.map(_parse_tfexample_fn)
     dataset = dataset.prefetch(10000)
     dataset = dataset.shuffle(buffer_size=20000)
@@ -67,6 +75,7 @@ def load_training_data(tfrecord_pattern, batch_size):
 
 class Model(tf.keras.Model):
     """The auto draw model."""
+
     def __init__(self, units):
         """The model structure function."""
         super(Model, self).__init__()
@@ -91,27 +100,76 @@ class Model(tf.keras.Model):
         self.fc1 = tf.keras.layers.Dense(1024)
         self.dropout2 = tf.keras.layers.Dropout(0.5)
         self.fc2 = tf.keras.layers.Dense(3)
+        self.reshape0 = tf.keras.layers.Reshape(target_shape=(-1, 3))
 
-    def call(self, inks):
+    @tf.function
+    def call(self, inks, training=True):
         """The call function."""
         # output at every time step
         # output shape == (batch_size, seq_length, hidden_size)
         output = self.fc0(inks)
-        output = self.dropout0(output)
+        output = self.dropout0(output, training=training)
         output = self.gru(output)
         # print(output.shape)
 
         # Add dnn.
         # The prediction shape is (batch_size * seq_length, 3). [x_delta,
         # y_delta, end_flag]
-        output = self.dropout1(output)
+        output = self.dropout1(output, training=training)
         output = self.fc1(output)
-        output = self.dropout2(output)
-        delta_pred = tf.reshape(self.fc2(output), (-1, 3))
+        output = self.dropout2(output, training=training)
+        output = self.fc2(output)
+        delta_pred = self.reshape0(output)
         # print(delta_pred.shape)
 
         # states will be used to pass at every step to the model while training
         return delta_pred
+
+
+def model_func(batch_size, units, training=True):
+    """The auto-draw model built with keras function api.
+
+    Args:
+        batch_size: The batch size.
+        units: The rnn units.
+        training: If training.
+
+    Returns:
+        The input and output.
+    """
+    inputs = tf.keras.Input(shape=(None, 3), batch_size=batch_size)
+    print(inputs.shape)
+
+    x = tf.keras.layers.Dense(1024)(inputs)
+    # print(x.shape)
+    x = tf.keras.layers.Dropout(0.5)(x, training=training)
+
+    if tf.test.is_gpu_available():
+        gru = tf.keras.layers.CuDNNGRU(units,
+                                       return_sequences=True,
+                                       recurrent_initializer='glorot_uniform',
+                                       stateful=True)
+    else:
+        gru = tf.keras.layers.GRU(units,
+                                  return_sequences=True,
+                                  recurrent_activation='sigmoid',
+                                  recurrent_initializer='glorot_uniform',
+                                  stateful=True)
+    x = gru(x)
+    # print(x.shape)
+
+    x = tf.keras.layers.Dropout(0.5)(x, training=training)
+    x = tf.keras.layers.Dense(1024)(x)
+    print(x.shape)
+    x = tf.keras.layers.Dropout(0.5)(x, training=training)
+    x = tf.keras.layers.Dense(3)(x)
+    # print(x.shape)
+
+    # The deltas prediction.
+    output = tf.keras.layers.Reshape(target_shape=(-1, 3),
+                                     batch_size=batch_size)(x)
+
+    return inputs, output
 
 
 def loss_func(real, pred):
@@ -125,7 +183,7 @@ def loss_func(real, pred):
         The loss.
     """
     # resolve real data.
-    real = np.reshape(real, (-1, 3))
+    # real = np.reshape(real, (-1, 3))
 
     # # (x_delta, y_delta)
     # delta_real = real[:, 0: 2]
@@ -152,7 +210,8 @@ def train(model, quick_draw_class):
         model: The auto-draw model.
         quick_draw_class: The quick draw class. The end of tfRecord file name.
     """
-    file_path = "/tmp/autodraw_data/training.tfrecord-" + quick_draw_class
+    file_path = "/home/zhaocc/sources/data/autodraw_data/training.tfrecord-" \
+                + quick_draw_class
     print(file_path)
     dataset = load_training_data(file_path, BATCH_SIZE)
 
@@ -186,7 +245,7 @@ def train(model, quick_draw_class):
             with tf.GradientTape() as tape:
                 # feeding the hidden state back into the model
                 # This is the interesting step
-                pred = model(ink_input)
+                pred = model(ink_input, training=True)
                 # print("pred:\n", str(pred))
                 loss = loss_func(ink_target, pred)
 
@@ -197,6 +256,8 @@ def train(model, quick_draw_class):
                 print('Epoch {} Batch {} Loss {}'.format(epoch + 1,
                                                          batch,
                                                          loss))
+            if batch >= 10000:
+                break
 
         # saving (checkpoint) the model every epoch
         if (epoch + 1) % 1 == 0:
@@ -209,17 +270,20 @@ def train(model, quick_draw_class):
         auto_draw(quick_draw_class)
 
         epoch_losses.append(loss)
+
+    model.save(MODEL_H5_PATH)  # Save to HDF5 format.
     return epoch_losses
 
 
-def plot_quick_draw(inks, cls_name, *sub_plt_place):
+def plot_quick_draw(inks_, cls_name, *sub_plt_place):
     """Plot the quick drawing.
 
     Args:
-        inks: The ink deltas array with shape(ink_num, 3). Every delta is (
+        inks_: The ink deltas array with shape(ink_num, 3). Every delta is (
         x_delta, y_delta, if_end).
         cls_name: The class name.
     """
+    inks = inks_.copy()
     inks[-1, -1] = 1.0
     inks_num = inks.shape[0] + 1  # The total inks number.
     plt_ink = np.zeros((inks_num, 3))
@@ -252,14 +316,16 @@ def auto_draw(quick_draw_class):
 
     """
 
-    model = Model(UNITS)
-    model.build(tf.TensorShape([1, None, 3]))
+    # model = Model(UNITS)
+    # model.build(tf.TensorShape([1, None, 3]))
+    input, output = model_func(1, UNITS, training=False)
+    model = tf.keras.Model(input, output)
     model.summary()
     model.load_weights(CHECKPOINT_PATH)
 
     quick_draws = first_batch_ink
     shape = first_batch_shape
-    #     print(shape)
+    # print(shape)
 
     for batch_ind in range(BATCH_SIZE):
         model.reset_states()
@@ -274,6 +340,7 @@ def auto_draw(quick_draw_class):
 
         for i in range(ink_num):
             pred = model(input).numpy()
+            pred = np.reshape(pred, newshape=(-1, 3))
             pred_ = np.zeros(shape=(1, 3))
             pred_[0, 0: 2] = pred[0, 0: 2]
             if pred[0, 2] >= 0.5:
@@ -287,12 +354,12 @@ def auto_draw(quick_draw_class):
         plt.figure()
         # The real quick draw.
         plot_quick_draw(np.expand_dims(quick_draws[batch_ind, :, :], 0)[0],
-                        "real_" + quick_draw_class,
+                        "real",
                         1, 2, 1)
         plt.axis('off')
         # The predict quick draw.
         inks = np.expand_dims(inks, 0)
-        plot_quick_draw(inks[0],  "pred_" + quick_draw_class, 1, 2, 2)
+        plot_quick_draw(inks[0], "predict", 1, 2, 2)
         plt.axis('off')
         plt.show()
 
@@ -316,8 +383,11 @@ def plot_losses(losses):
 def main(argv):
     """The main function."""
     del argv
-    model = Model(UNITS)
-    model.build(tf.TensorShape([BATCH_SIZE, None, 3]))
+    # model = Model(UNITS)
+    # model.build(tf.TensorShape([BATCH_SIZE, None, 3]))
+    # model.summary()
+    input, output = model_func(BATCH_SIZE, UNITS, training=True)
+    model = tf.keras.Model(input, output)
     model.summary()
     epoch_loss = train(model, str(FLAGS.quick_draw_class))
     plot_losses(epoch_loss)
@@ -329,7 +399,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--quick_draw_class",
         type=str,
-        default="school_bus",
+        default="cat",
         help="The quick draw class for training model.")
 
     FLAGS, unparsed = parser.parse_known_args()
