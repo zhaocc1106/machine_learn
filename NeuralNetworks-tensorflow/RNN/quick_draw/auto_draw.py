@@ -210,7 +210,7 @@ def train(model, quick_draw_class):
         model: The auto-draw model.
         quick_draw_class: The quick draw class. The end of tfRecord file name.
     """
-    file_path = "/home/zhaocc/sources/data/autodraw_data/training.tfrecord-" \
+    file_path = "/tmp/autodraw_data/training.tfrecord-" \
                 + quick_draw_class
     print(file_path)
     dataset = load_training_data(file_path, BATCH_SIZE)
