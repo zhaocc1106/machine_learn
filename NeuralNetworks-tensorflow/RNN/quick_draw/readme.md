@@ -37,7 +37,7 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 进行训练，默认训练100w步，最后生成训练结果图片，如quick_draw_classify.png。
 
 ## 训练结果
-![quick_draw_classify](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify.png)
+![quick_draw_classify](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify/quick_draw_classify.png)
 
 # 自动涂鸦模型
 
@@ -75,4 +75,4 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 autodraw_bicycle.png，右侧为根据左侧初始10笔画生成预测的涂鸦。
 
 ## 训练结果
-![auto_draw_school_bus](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/autodraw_school_bus.png)
+![auto_draw_school_bus](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/auto_draw/autodraw_school_bus.png)
