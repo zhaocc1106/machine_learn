@@ -42,7 +42,7 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 # 自动涂鸦模型
 
 ## 模型
-使用到gru模型，主要学习每种类型涂鸦的笔画
+使用到lstm/gru模型，主要学习每种类型涂鸦的笔画
 
 ## 准备数据
 1. 下载原始数据<br>
