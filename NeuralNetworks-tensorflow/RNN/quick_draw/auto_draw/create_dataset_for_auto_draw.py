@@ -40,6 +40,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import math
 
+DRAW_SIZE = [255, 255]
+
 
 def parse_line(ndjson_line):
     """Parse an ndjson line and return ink (as np array) and classname."""
@@ -85,17 +87,18 @@ def parse_line(ndjson_line):
 
     # Preprocessing.
     # 1. Size normalization.
-    lower = np.min(np_ink[:, 0:2], axis=0)
-    upper = np.max(np_ink[:, 0:2], axis=0)
-    scale = upper - lower
-    scale[scale == 0] = 1
-    np_ink[:, 0:2] = (np_ink[:, 0:2] - lower) / scale
+    # lower = np.min(np_ink[:, 0:2], axis=0)
+    # upper = np.max(np_ink[:, 0:2], axis=0)
+    # scale = upper - lower
+    # scale[scale == 0] = 1
+    # np_ink[:, 0:2] = (np_ink[:, 0:2] - lower) / scale
+    np_ink[:, 0: 2] = np_ink[:, 0: 2] / DRAW_SIZE
 
     # 2. Compute deltas.
     np_ink[1:, 0:2] -= np_ink[0:-1, 0:2]
     np_ink = np_ink[1:, :]
     np_ink[:, 0: 2] = -np_ink[:, 0: 2]
-    np_ink[:, 0: 2] = np.round(np_ink[:, 0: 2], 2)
+    # np_ink[:, 0: 2] = np.round(np_ink[:, 0: 2], 2)
 
     # 3. Add complete flag.
     np_ink[-1, -1] = 1.0

@@ -26,10 +26,10 @@ tf.enable_eager_execution()
 print(tf.__version__)
 
 UNITS = 512  # Number of RNN units
-RNN_LAYERS = 10  # Number of RNN layers.
+RNN_LAYERS = 5  # Number of RNN layers.
 EPOCHS = 40  # The epoch number.
 BATCH_SIZE = 50  # The batch size.
-DEFAULT_TRAIN_CLASS = "cat"  # The training class.
+DEFAULT_TRAIN_CLASS = "school_bus"  # The training class.
 MODEL_DIR = "/tmp/autodraw_model/" + DEFAULT_TRAIN_CLASS  # Model dir.
 DATA_PATH = "/tmp/autodraw_data"  # Data dir path.
 CHECKPOINT_PATH = os.path.join(MODEL_DIR,
@@ -163,8 +163,8 @@ def loss_func(real, pred):
     return tf.losses.mean_squared_error(real, pred)
 
 
-first_batch_ink = []  # The first quick draw batch of every epoch.
-first_batch_shape = []  # The first quick draw batch shape of every epoch.
+test_batch_ink = []  # The first quick draw batch of every epoch.
+test_batch_shape = []  # The first quick draw batch shape of every epoch.
 
 
 def train(model, quick_draw_class):
@@ -179,9 +179,14 @@ def train(model, quick_draw_class):
     print(file_path)
     dataset = load_training_data(file_path, BATCH_SIZE)
 
+    # Load previous weights if exist.
+    if os.path.exists(CHECKPOINT_PATH + ".index"):
+        print("Loading weights: " + CHECKPOINT_PATH)
+        model.load_weights(CHECKPOINT_PATH)
+
     if os.path.exists(MODEL_DIR):
         shutil.rmtree(MODEL_DIR)
-    os.mkdir(MODEL_DIR)
+    os.makedirs(MODEL_DIR)
 
     # Using adam optimizer with default arguments
     optimizer = tf.train.AdamOptimizer()
@@ -193,10 +198,11 @@ def train(model, quick_draw_class):
         start_time = time.time()
 
         for batch, data in enumerate(dataset):
-            if batch == 0:
-                global first_batch_ink, first_batch_shape
-                first_batch_ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 4))
-                first_batch_shape = data["shape"]
+            if batch > 2000:
+                global test_batch_ink, test_batch_shape
+                test_batch_ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 4))
+                test_batch_shape = data["shape"]
+                break
 
             hidden = model.reset_states()  # reset the rnn state.
 
@@ -222,8 +228,6 @@ def train(model, quick_draw_class):
                 print('Epoch {} Batch {} Loss {}'.format(epoch + 1,
                                                          batch,
                                                          loss))
-            if batch >= 2000:
-                break
 
         # saving (checkpoint) the model every epoch
         if (epoch + 1) % 1 == 0:
@@ -238,7 +242,8 @@ def train(model, quick_draw_class):
         # If get smaller loss, save the model and show auto drawing.
         if loss < least_loss:
             # Save to HDF5 format.
-            model.save(os.path.join(MODEL_DIR, quick_draw_class + "_model.h5"))
+            model.save(os.path.join(MODEL_DIR, quick_draw_class + "_"
+                                    + str(epoch + 1) + "_model.h5"))
 
             auto_draw(quick_draw_class, epoch + 1)
             least_loss = loss
@@ -330,8 +335,8 @@ def auto_draw(quick_draw_class, epoch):
     for batch_ind in range(BATCH_SIZE):
         model.reset_states()
 
-        inks = first_batch_ink[batch_ind, 0: 10, :]
-        # print(ink)
+        inks = test_batch_ink[batch_ind, 0: 10, :]
+        print(inks)
         input = inks
         input = np.expand_dims(input, 0)
         input = input.astype(np.float32)
@@ -353,7 +358,7 @@ def auto_draw(quick_draw_class, epoch):
         # Plot quick draw.
         plt.figure()
         # The real quick draw.
-        plot_quick_draw(np.expand_dims(first_batch_ink[batch_ind, :, :], 0)[0],
+        plot_quick_draw(np.expand_dims(test_batch_ink[batch_ind, :, :], 0)[0],
                         "real", min_len, max_len, 1, 2, 1)
         plt.axis('off')
         # The predict quick draw.
@@ -383,6 +388,24 @@ def plot_losses(losses):
     plt.show()
 
 
+def predict(quick_draw_class):
+    """Predict.
+
+    Args:
+        quick_draw_class: The quick draw class.
+    """
+    file_path = DATA_PATH + "/training.tfrecord-" + quick_draw_class
+    dataset = load_training_data(file_path, BATCH_SIZE)
+
+    for batch, data in enumerate(dataset):
+        if batch > 2010:
+            global test_batch_ink, test_batch_shape
+            test_batch_ink = np.reshape(data["ink"], (BATCH_SIZE, -1, 4))
+            test_batch_shape = data["shape"]
+            auto_draw(quick_draw_class, 0)
+            break
+
+
 def main(argv):
     """The main function."""
     del argv
@@ -398,6 +421,7 @@ def main(argv):
     model.summary()
     epoch_loss = train(model, str(FLAGS.quick_draw_class))
     plot_losses(epoch_loss)
+    predict(str(FLAGS.quick_draw_class))
 
 
 if __name__ == "__main__":
