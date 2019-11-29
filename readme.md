@@ -1,8 +1,8 @@
 # 机器学习和深度学习的各类算法的实现
 <div align="center">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/auto_draw/autodraw_school_bus.png"  height="200" width="300" alt="rnn-auto_draw">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify/quick_draw_classify.png"  height="200" width="300" alt="rnn-quick_draw_classify">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/photo2sketch_01.png"  height="200" width="300" alt="gan-photo2sketch">
+<img src="https://github.com/zhaocc1106/end2end_ml/blob/master/quick_draw/auto_draw/out/autodrawer.gif"  height="400" width="350" alt="rnn-auto_draw">
+<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify/quick_draw_classify.png"  height="400" width="350" alt="rnn-quick_draw_classify">
+<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/photo2sketch_01.png"  height="400" width="350" alt="gan-photo2sketch">
 </div>
 
 ## 快速开始
