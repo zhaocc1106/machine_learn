@@ -30,6 +30,7 @@ import json
 import os
 import random
 import sys
+import shutil
 import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -162,8 +163,8 @@ def convert_data(trainingdata_dir,
                 print("Couldn't parse ink from '" + line + "'.")
         if class_name not in classnames:
             classnames.append(class_name)
-            if len(classnames) % 10 == 0:
-                plot_quick_draw(ink, class_name)
+            # if len(classnames) % 10 == 0:
+            #     plot_quick_draw(ink, class_name)
         features = {}
         features["class_index"] = tf.train.Feature(
             int64_list=tf.train.Int64List(
@@ -171,10 +172,10 @@ def convert_data(trainingdata_dir,
         print(class_name)
         features["ink"] = tf.train.Feature(float_list=tf.train.FloatList(
             value=ink.flatten()))
-        print("ink: " + str(ink.flatten()))
+        # print("ink: " + str(ink.flatten()))
         features["shape"] = tf.train.Feature(int64_list=tf.train.Int64List(
             value=ink.shape))
-        print("ink.shape: " + str(ink.shape))
+        # print("ink.shape: " + str(ink.shape))
         f = tf.train.Features(feature=features)
         example = tf.train.Example(features=f)
         writers[_pick_output_shard()].write(example.SerializeToString())
@@ -193,6 +194,11 @@ def convert_data(trainingdata_dir,
 
 def main(argv):
     del argv
+
+    if os.path.exists(FLAGS.output_path):
+        shutil.rmtree(FLAGS.output_path)
+    os.makedirs(FLAGS.output_path)
+
     classnames = convert_data(
         FLAGS.ndjson_path,
         FLAGS.train_observations_per_class,
@@ -217,12 +223,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--ndjson_path",
         type=str,
-        default="\\gcloud\\rnn_tutorial_data",
+        default="/gcloud/rnn_tutorial_data",
         help="Directory where the ndjson files are stored.")
     parser.add_argument(
         "--output_path",
         type=str,
-        default="\\tmp\\quickdraw_data",
+        default="/tmp/quickdraw_data",
         help="Directory where to store the output TFRecord files.")
     parser.add_argument(
         "--train_observations_per_class",
