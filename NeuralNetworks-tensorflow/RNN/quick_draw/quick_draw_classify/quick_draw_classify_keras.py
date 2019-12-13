@@ -11,7 +11,6 @@ Date:    2019/11/29 下午4:51
 
 # common libs.
 import os
-import shutil
 import math
 
 # 3rd-part libs.
@@ -181,10 +180,9 @@ def train(model, train_data_pattern, eval_data_pattern):
         print("Loading weights: " + CHECKPOINT_PATH)
         model.load_weights(CHECKPOINT_PATH)
 
-    # Recreate the model dir.
-    # if os.path.exists(MODEL_DIR):
-    #     shutil.rmtree(MODEL_DIR)
-    # os.makedirs(MODEL_DIR)
+    # Create the model dir.
+    if not os.path.exists(MODEL_DIR):
+        os.makedirs(MODEL_DIR)
 
     # model fit callback.
     callbacks = [
