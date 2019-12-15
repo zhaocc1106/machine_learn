@@ -33,11 +33,13 @@ gsutil -m cp "gs://quickdraw_dataset/full/simplified/*" .
 最后运行create_dataset_for_classify.py将原始数据转换为tfRecords文件，可以添加参数指定目录。
 
 ## 训练模型
-将tfRecords文件放到/tmp/quickdraw_data/目录下后，可以直接运行quick_draw_classify.py
-进行训练，默认训练100w步，最后生成训练结果图片，如quick_draw_classify.png。
+将tfRecords文件放到/tmp/quickdraw_data/目录下后.<br>
+1. 直接运行quick_draw_classify.py(estimator版本)进行训练，默认训练100w步，最后生成训练结果图片，如quick_draw_classify.png。<br>
+2. 直接运行quick_draw_classify_keras.py(keras版本)进行训练，默认训练10个epoch，每个epoch训练20000步，如quick_draw_classify_keras.png。<br>
+
 
 ## 训练结果
-![quick_draw_classify](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify/quick_draw_classify.png)
+![quick_draw_classify](https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify/quick_draw_classify_keras.png)
 
 # 自动涂鸦模型
 
