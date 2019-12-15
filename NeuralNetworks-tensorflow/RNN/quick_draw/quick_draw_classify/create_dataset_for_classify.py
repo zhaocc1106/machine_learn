@@ -3,6 +3,8 @@
 #
 """Creates training and eval data from Quickdraw NDJSON files.
 
+Run in tensorflow 2.0.
+
 This tool reads the NDJSON files from https://quickdraw.withgoogle.com/data
 and converts them into tensorflow.Example stored in TFRecord files.
 
@@ -35,6 +37,8 @@ import numpy as np
 import tensorflow as tf
 import matplotlib.pyplot as plt
 
+DRAW_SIZE = [255, 255]
+
 
 def parse_line(ndjson_line):
     """Parse an ndjson line and return ink (as np array) and classname."""
@@ -42,6 +46,9 @@ def parse_line(ndjson_line):
     class_name = sample["word"]
     if not class_name:
         print("Empty classname")
+        return None, None
+    if not sample["recognized"]:
+        print("Ignore unrecognized image.")
         return None, None
     inkarray = sample["drawing"]
     stroke_lengths = [len(stroke[0]) for stroke in inkarray]
@@ -61,11 +68,7 @@ def parse_line(ndjson_line):
         np_ink[current_t - 1, 2] = 1  # stroke_end
     # Preprocessing.
     # 1. Size normalization.
-    lower = np.min(np_ink[:, 0:2], axis=0)
-    upper = np.max(np_ink[:, 0:2], axis=0)
-    scale = upper - lower
-    scale[scale == 0] = 1
-    np_ink[:, 0:2] = (np_ink[:, 0:2] - lower) / scale
+    np_ink[:, 0: 2] = np_ink[:, 0: 2] / DRAW_SIZE
     # 2. Compute deltas.
     np_ink[1:, 0:2] -= np_ink[0:-1, 0:2]
     np_ink = np_ink[1:, :]
@@ -132,12 +135,13 @@ def convert_data(trainingdata_dir,
 
     file_handles = []
     # Open all input files.
-    for filename in sorted(tf.gfile.ListDirectory(trainingdata_dir)):
+    for filename in sorted(tf.compat.v1.gfile.ListDirectory(trainingdata_dir)):
         if not filename.endswith(".ndjson"):
             print("Skipping", filename)
             continue
         file_handles.append(
-            tf.gfile.GFile(os.path.join(trainingdata_dir, filename), "r"))
+            tf.compat.v1.gfile.GFile(os.path.join(trainingdata_dir, filename),
+                                     "r"))
         if offset:  # Fast forward all files to skip the offset.
             count = 0
             for _ in file_handles[-1]:
@@ -148,8 +152,8 @@ def convert_data(trainingdata_dir,
     writers = []
     for i in range(FLAGS.output_shards):
         writers.append(
-            tf.python_io.TFRecordWriter("%s-%05i-of-%05i" % (output_file, i,
-                                                             output_shards)))
+            tf.compat.v1.python_io.TFRecordWriter("%s-%05i-of-%05i" % (
+                output_file, i, output_shards)))
 
     reading_order = list(range(len(file_handles))) * observations_per_class
     random.shuffle(reading_order)
@@ -157,10 +161,10 @@ def convert_data(trainingdata_dir,
     for c in reading_order:
         line = file_handles[c].readline()
         ink = None
-        while ink is None:
-            ink, class_name = parse_line(line)
-            if ink is None:
-                print("Couldn't parse ink from '" + line + "'.")
+        ink, class_name = parse_line(line)
+        if ink is None:
+            print("Couldn't parse ink from '" + line + "'.")
+            continue
         if class_name not in classnames:
             classnames.append(class_name)
             # if len(classnames) % 10 == 0:
@@ -186,7 +190,7 @@ def convert_data(trainingdata_dir,
     for f in file_handles:
         f.close()
     # Write the class list.
-    with tf.gfile.GFile(output_file + ".classes", "w") as f:
+    with tf.compat.v1.gfile.GFile(output_file + ".classes", "w") as f:
         for class_name in classnames:
             f.write(class_name + "\n")
     return classnames
@@ -247,4 +251,4 @@ if __name__ == "__main__":
         help="Number of shards for the output.")
 
     FLAGS, unparsed = parser.parse_known_args()
-    tf.app.run(main=main, argv=[sys.argv[0]] + unparsed)
+    tf.compat.v1.app.run(main=main, argv=[sys.argv[0]] + unparsed)

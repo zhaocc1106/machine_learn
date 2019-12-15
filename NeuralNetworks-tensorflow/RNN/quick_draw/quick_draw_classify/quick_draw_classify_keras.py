@@ -4,6 +4,7 @@
 """
 Train a classifier with bi-rnn model implemented by keras for quick draw
 dataset.
+Run in tensorflow 2.0.
 
 Authors: zhaochaochao(zhaochaochao@baidu.com)
 Date:    2019/11/29 下午4:51
@@ -29,7 +30,6 @@ TRAIN_CLASS_FILE_PATH = "/tmp/quickdraw_data/training.tfrecord.classes"
 EVAL_CLASS_FILE_PATH = "/tmp/quickdraw_data/eval.tfrecord.classes"
 MODEL_DIR = "/tmp/quick_draw_classify_keras"
 MODEL_SAVER_PATH = os.path.join(MODEL_DIR, "model.h5")
-CHECKPOINT_PATH = os.path.join(MODEL_DIR, "weights.hdf5")
 
 
 def get_classes(training):
@@ -176,9 +176,9 @@ def train(model, train_data_pattern, eval_data_pattern):
         eval_data_pattern: The evaluation data pattern.
     """
     # Load previous weights if exist.
-    if os.path.exists(CHECKPOINT_PATH):
-        print("Loading weights: " + CHECKPOINT_PATH)
-        model.load_weights(CHECKPOINT_PATH)
+    if os.path.exists(MODEL_SAVER_PATH):
+        print("Loading weights: " + MODEL_SAVER_PATH)
+        model.load_weights(MODEL_SAVER_PATH)
 
     # Create the model dir.
     if not os.path.exists(MODEL_DIR):
@@ -187,9 +187,9 @@ def train(model, train_data_pattern, eval_data_pattern):
     # model fit callback.
     callbacks = [
         # Model saver callback.
-        tf.keras.callbacks.ModelCheckpoint(filepath=CHECKPOINT_PATH,
-                                           save_weights_only=True,
-                                           save_freq=1000),
+        tf.keras.callbacks.ModelCheckpoint(filepath=MODEL_SAVER_PATH,
+                                           save_weights_only=False,
+                                           save_freq=20000),
         # Tensorboard callback.
         tf.keras.callbacks.TensorBoard(log_dir=MODEL_DIR, update_freq=1000)
     ]
@@ -201,13 +201,10 @@ def train(model, train_data_pattern, eval_data_pattern):
                                             BATCH_SIZE),
         validation_steps=1000,
         steps_per_epoch=20000,
-        epochs=30,
+        epochs=10,
         verbose=1,
         callbacks=callbacks,
     )
-
-    # Save the full model.
-    model.save(MODEL_SAVER_PATH)
 
     # Test.
     predict(MODEL_SAVER_PATH, eval_data_pattern)
