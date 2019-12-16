@@ -1,7 +1,7 @@
 # 机器学习和深度学习的各类算法的实现
 <div align="center">
+<img src="https://github.com/zhaocc1106/end2end_ml/blob/master/quick_draw/quick_draw_classify/out/quick_draw_classify.gif"  height="400" width="750" alt="rnn-quick_draw_classify">
 <img src="https://github.com/zhaocc1106/end2end_ml/blob/master/quick_draw/auto_draw/out/autodrawer.gif"  height="400" width="350" alt="rnn-auto_draw">
-<img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/RNN/quick_draw/quick_draw_classify/quick_draw_classify.png"  height="400" width="350" alt="rnn-quick_draw_classify">
 <img src="https://github.com/zhaocc1106/machine_learn/blob/master/NeuralNetworks-tensorflow/generation_network_model/GAN/photo2sketch_01.png"  height="400" width="350" alt="gan-photo2sketch">
 </div>
 
