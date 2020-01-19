@@ -45,4 +45,4 @@ Am×n=Um×mΣm×nVTn×n≈Um×kΣk×kVTk×n
 ### 利用SVD 提高推荐的效果
 　　通过行降维将大数据缩减<br>
 ## 图像压缩
-　　通过Am×n=Um×mΣm×nVTn×n≈Um×kΣk×kVTk×n的性质，将原有ｍ×ｎ的像素缩减成m*r*2+r*r的像素来存储<br>
+　　通过Am×n=Um×mΣm×nVTn×n≈Um×kΣk×kVTk×n的性质，将原有ｍ×ｎ的像素缩减成m*r+r*n+r的像素来存储<br>
