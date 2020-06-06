@@ -97,8 +97,8 @@ def get_input_generator(mode, tfrecord_pattern, batch_size):
         dataset = dataset.shuffle(buffer_size=1000000)
     # Our inputs are variable length, so pad them.
     dataset = dataset.padded_batch(
-        batch_size, padded_shapes=dataset.output_shapes)
-    return dataset.make_one_shot_iterator()
+        batch_size, padded_shapes=tf.compat.v1.data.get_output_shapes(dataset))
+    return dataset
 
 
 def model_func(cnn_len=[5, 5, 3], cnn_filters=[48, 64, 96],  # con relative.
@@ -217,7 +217,8 @@ def predict(model_saver_path, eval_data_pattern, num=30):
 
     # Prepare some inks from evaluation data.
     datasets = get_input_generator("eval", eval_data_pattern, BATCH_SIZE)
-    draws, labels_true = datasets.get_next()
+    draws, labels_true = next(iter(datasets.take(1)))
+
     labels_true = labels_true.numpy()
     print(labels_true)
 
@@ -288,9 +289,10 @@ def plot_quick_draw(inks, cls_name, right, *sub_plt_place):
 
 if __name__ == "__main__":
     inp, out = model_func()
-    model = tf.keras.Model(inp, out)
+    model = tf.keras.Model(inp, out, name='quick_draw_classifier')
     model.compile(loss=tf.keras.losses.sparse_categorical_crossentropy,
                   optimizer=tf.keras.optimizers.Adam(),
                   metrics=['accuracy'])
     model.summary()
     train(model, TRAIN_DATA_PATTERN, EVAL_DATA_PATTERN)
+    predict(MODEL_SAVER_PATH, EVAL_DATA_PATTERN)

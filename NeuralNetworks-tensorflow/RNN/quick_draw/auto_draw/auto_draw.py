@@ -94,7 +94,10 @@ def model_func(rnn_layer, units, rnn_type="lstm", training=True,
     """
     inputs = tf.keras.Input(shape=(None, 4), batch_size=batch_size)
 
-    x = tf.keras.layers.Dense(1024)(inputs)
+    # Add mask layers.
+    mask = tf.keras.layers.Masking(mask_value=0)(inputs)
+
+    x = tf.keras.layers.Dense(1024)(mask)
     x = tf.keras.layers.Dropout(0.5)(x, training=training)
 
     # Add rnn layer.
