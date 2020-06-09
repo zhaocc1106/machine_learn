@@ -39,6 +39,7 @@ EMBEDDING_DIM = 256
 RNN_UNITS = 1024
 EPOCHS = 50
 MODEL_PATH = '/tmp/nmt'
+has_show_summary = False  # Show summary only once.
 
 
 def unicode_to_ascii(s):
@@ -151,6 +152,7 @@ class Encoder(tf.keras.Model):
                                        dropout=0.5,
                                        recurrent_dropout=0.5)
 
+    @tf.function
     def call(self, inputs, hidden_state, training=False):
         """The call function.
 
@@ -185,6 +187,7 @@ class BahandauAttention(tf.keras.layers.Layer):
         self.W2 = tf.keras.layers.Dense(units=units)
         self.V = tf.keras.layers.Dense(units=1)
 
+    @tf.function
     def call(self, inputs, hidden_state):
         """The
 
@@ -244,6 +247,7 @@ class Decoder(tf.keras.Model):
         self.fc = tf.keras.layers.Dense(vocab_size)
         self.attention_layer = BahandauAttention(self.dec_units)
 
+    @tf.function
     def call(self, inputs, hidden_state, enc_output, training=None):
         """The call function.
 
@@ -259,15 +263,22 @@ class Decoder(tf.keras.Model):
         # enc_output shape == (batch_size, seq_max_len, hidden_size)
 
         # Calc the context vector.
+        # The context vector shape == (batch_size, rnn_units)
         context_vector, attention_weights = self.attention_layer(enc_output,
                                                                  hidden_state)
+        print('context_vector shape: {}'.format(context_vector.shape))
 
-        # Embed of decoder input shape == (batch_size, 1, embed_dim)
+        # Decoder input shape == (batch_size, embed_dim)
+        print('decoder input shape: {}'.format(inputs.shape))
         embed = self.embedding(inputs)
+        # Embed of decoder input shape == (batch_size, 1, embed_dim)
+        print('embed shape: {}'.format(embed.shape))
 
         # Concat context vector and embed of decoder input to attention vector.
+        # The attention vector shape == (batch_size, 1, embed_dim + rnn_units)
         attention_vector = tf.concat([tf.expand_dims(context_vector, 1),
                                       embed], -1)
+        print('attention_vector shape: {}'.format(attention_vector.shape))
 
         # Calc the output and state of gru.
         # The output shape == (batch_size, 1, hidden_size)
@@ -322,12 +333,13 @@ def train_step(inp, target, hidden_state, encoder, decoder, optimizer, \
     loss = 0
 
     with tf.GradientTape() as tape:
-        enc_output, enc_hidden_state = encoder(inp, hidden_state, training=True)
+        enc_output, enc_hidden_state = encoder(inp, hidden_state,
+                                               training=True)
         dec_hidden_state = enc_hidden_state
 
-        # The decoder input shape == (batch_size, 1, 1)
-        dec_inp = tf.expand_dims([tar_lang_tokenizer.word_index['<start>']] *
-                                 BATCH_SIZE, 1)
+        # The decoder input shape == (batch_size, 1)
+        dec_inp = tf.expand_dims(
+            [tar_lang_tokenizer.word_index['<start>']] * BATCH_SIZE, 1)
 
         for t in range(1, target.shape[1]):
             dec_output, dec_hidden_state, _ = decoder(dec_inp,
@@ -342,6 +354,12 @@ def train_step(inp, target, hidden_state, encoder, decoder, optimizer, \
                              decoder.trainable_variables
         gradients = tape.gradient(target=loss, sources=training_variables)
         optimizer.apply_gradients(zip(gradients, training_variables))
+
+        global has_show_summary
+        if not has_show_summary:
+            encoder.summary()
+            decoder.summary()
+            has_show_summary = True
         return batch_loss
 
 
@@ -363,23 +381,37 @@ def train(encoder, decoder, dataset, steps_per_epoch, checkpoint,
         # Load checkpoint if exist.
         checkpoint.restore(tf.train.latest_checkpoint(checkpoint_dir))
 
-    for epoch in range(epochs):
-        begin_time = time.time()
-        total_loss = 0
-        hidden_state = encoder.initialize_hidden_state()
+    # Tensorboard.
+    summary_writer = tf.summary.create_file_writer(MODEL_PATH)
 
-        for (batch, (inp, tar)) in enumerate(dataset.take(steps_per_epoch)):
-            batch_loss = train_step(inp, tar, hidden_state, encoder, decoder,
-                                    optimizer, tar_lang_tokenizer)
-            total_loss += batch_loss
-            if batch % 100 == 0:
-                print('Epoch {} batch {}, loss: {:.4f}.'.format(epoch, batch,
-                                                                batch_loss))
+    with summary_writer.as_default():
+        for epoch in range(epochs):
+            begin_time = time.time()
+            total_loss = 0
+            hidden_state = encoder.initialize_hidden_state()
+            tf.summary.trace_on(graph=True)
 
-        checkpoint.save(file_prefix=checkpoint_prefix)
-        print('Epoch {}, loss: {:.4f}.'.format(epoch, total_loss /
-                                               steps_per_epoch))
-        print('Time cost {:.2f}s.'.format(time.time() - begin_time))
+            for (batch, (inp, tar)) in enumerate(dataset.take(steps_per_epoch)):
+                batch_loss = train_step(inp, tar, hidden_state, encoder,
+                                        decoder, optimizer, tar_lang_tokenizer)
+                total_loss += batch_loss
+                if batch % 100 == 0:
+                    print(
+                        'Epoch {} batch {}, loss: {:.4f}.'.format(epoch, batch,
+                                                                  batch_loss))
+
+            tf.summary.trace_export('nmt',
+                                    step=epoch)
+            tf.summary.scalar(name='batch_loss',
+                              data=total_loss / steps_per_epoch,
+                              step=epoch)
+
+            checkpoint.save(file_prefix=checkpoint_prefix)
+
+            print('Epoch {}, loss: {:.4f}.'.format(epoch, total_loss /
+                                                   steps_per_epoch))
+            print('Time cost {:.2f}s.'.format(time.time() - begin_time))
+    summary_writer.close()
     return checkpoint
 
 
@@ -422,7 +454,7 @@ def translate(src_sentences, encoder, decoder, checkpoint, src_lang_tokenizer,
                                                training=False)
         dec_hidden_state = enc_hidden_state
         dec_inp = tf.expand_dims([tar_lang_tokenizer.word_index[
-                                      '<start>']], 0)
+                                       '<start>']], 1)
         for j in range(max_length_tar):
             dec_output, dec_hidden_state, attention_weights = decoder(
                 inputs=dec_inp,
@@ -436,7 +468,7 @@ def translate(src_sentences, encoder, decoder, checkpoint, src_lang_tokenizer,
             if pred_word == '<end>':
                 break
             tar_sentence = tar_sentence + ' ' + pred_word
-            dec_inp = tf.expand_dims([pred_word_index], 0)
+            dec_inp = tf.expand_dims([pred_word_index], 1)
         print(tar_sentence)
 
 
