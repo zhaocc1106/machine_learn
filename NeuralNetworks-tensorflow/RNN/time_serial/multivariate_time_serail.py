@@ -102,8 +102,8 @@ def load_multivariate_dataset(training_split, single_step=False,
     # Standardize.
     # Notice: The mean and standard deviation should only be computed by
     # training data.
-    uni_train_mean = np.mean(multi_data[:training_split])
-    uni_train_std = np.std(multi_data[:training_split])
+    uni_train_mean = np.mean(multi_data[:training_split], axis=0)
+    uni_train_std = np.std(multi_data[:training_split], axis=0)
     multi_data = (multi_data - uni_train_mean) / uni_train_std
 
     # Generate training data and label.
