@@ -3,4 +3,6 @@ k近邻法(k-nearest neighbor, k-NN)是1967年由Cover T和Hart P提出的一种
 
 ## 距离度量
 很简单的A点距离B点的距离公式:
+```
 	|AB| = ((x1 - x2)² + (y1 - y2)²)^(½)
+```
