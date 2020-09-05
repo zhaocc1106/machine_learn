@@ -348,10 +348,10 @@ def auto_draw(quick_draw_class, epoch):
             pred = model(input).numpy()
             pred = np.reshape(pred, newshape=(-1, 4))
             pred_ = np.zeros(shape=(1, 4))
-            pred_[0, 0: 2] = pred[0, 0: 2]  # deltas
-            if pred[0, 2] >= 0.5:
+            pred_[0, 0: 2] = pred[-1, 0: 2]  # deltas
+            if pred[-1, 2] >= 0.5:
                 pred_[0, 2] = 1.0  # end of stroke.
-            if pred[0, 3] >= 0.5:
+            if pred[-1, 3] >= 0.5:
                 pred_[0, 3] = 1.0  # complete flag of total image.
 
             inks = np.concatenate([inks, pred_])
