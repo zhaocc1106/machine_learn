@@ -6,8 +6,8 @@
 ## 准备数据
 使用开放的[quickdraw](https://github.com/googlecreativelab/quickdraw-dataset)数据库。
 1. 已经转换为tfRecords的数据<br>
-http://download.tensorflow.org/data/quickdraw_tutorial_dataset_v1.tar.gz（大约 
-1GB）。<br>
+http://download.tensorflow.org/data/quickdraw_tutorial_dataset_v1.tar.gz （大约 
+1GB）<br>
 解压到\tmp\quickdraw_data\目录下。
 2. 原始数据<br>
 使用 gsutil 下载整个数据集。请注意，原始 .ndjson 文件需要下载约 22GB 的数据。<br>
