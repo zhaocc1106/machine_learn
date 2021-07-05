@@ -55,8 +55,8 @@ def create_network(mirrored_strategy, num_class):
         model.add(tf.keras.layers.Flatten())
         # 添加完全连接层，1000个nn，使用relu激活函数
         model.add(tf.keras.layers.Dense(1000, activation="relu"))
-        model.add(tf.keras.layers.Dense(10000, activation="relu"))
-        model.add(tf.keras.layers.Dense(10000, activation="relu"))
+        model.add(tf.keras.layers.Dense(1000, activation="relu"))
+        model.add(tf.keras.layers.Dense(1000, activation="relu"))
         model.add(tf.keras.layers.Dense(1000, activation="relu"))
         # 添加完全连接层作为输出层，分成10个类
         model.add(tf.keras.layers.Dense(num_class, activation="softmax"))
