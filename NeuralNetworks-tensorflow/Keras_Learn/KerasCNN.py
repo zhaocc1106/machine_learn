@@ -12,6 +12,7 @@ Date:    2018/9/5 19:03
 # common libs.
 import os
 import shutil
+import time
 
 # 3rd-part libs.
 from numpy import *
@@ -19,7 +20,9 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 MODEL_PATH = "/tmp/kerasCNN/"
-SAVER_PATH = "/tmp/kerasCNN/model_saver.h5"
+CKPT_PATH = "/tmp/kerasCNN/checkpoint"
+SAVER_PATH = "/tmp/kerasCNN/model_saver"
+TRT_PATH = "/tmp/kerasCNN/trt_model"
 
 # print(os.environ['LD_LIBRARY_PATH'])
 
@@ -51,6 +54,9 @@ def create_network(mirrored_strategy, num_class):
         # 添加flatten层
         model.add(tf.keras.layers.Flatten())
         # 添加完全连接层，1000个nn，使用relu激活函数
+        model.add(tf.keras.layers.Dense(1000, activation="relu"))
+        model.add(tf.keras.layers.Dense(10000, activation="relu"))
+        model.add(tf.keras.layers.Dense(10000, activation="relu"))
         model.add(tf.keras.layers.Dense(1000, activation="relu"))
         # 添加完全连接层作为输出层，分成10个类
         model.add(tf.keras.layers.Dense(num_class, activation="softmax"))
@@ -112,7 +118,7 @@ def train_keras_cnn(trainX, trainY, testX, testY):
     # 定义model fit过程的回调
     callbacks = [
         # Model saver callback.
-        tf.keras.callbacks.ModelCheckpoint(filepath=SAVER_PATH),
+        tf.keras.callbacks.ModelCheckpoint(filepath=CKPT_PATH),
         # Learning rate scheduler.
         tf.keras.callbacks.LearningRateScheduler(learning_rate_scheduler,
                                                  verbose=1),
@@ -153,6 +159,7 @@ def train_keras_cnn(trainX, trainY, testX, testY):
     score = model.evaluate(testX, testY, verbose=1, batch_size=100)  # 评估模型
     print('Test loss:', score[0])
     print('Test accuracy:', score[1])
+    model.save(SAVER_PATH, save_format='tf')
 
 
 def predict(testX):
@@ -164,8 +171,13 @@ def predict(testX):
     # 加载整个模型，包括 graphs 和 weights
     model = tf.keras.models.load_model(SAVER_PATH)
 
-    labels = model.predict(testX)
-    print(labels)
+    beg_time = None
+    labels = None
+    for i in range(10):
+        if i == 1:
+            beg_time = time.time()
+        labels = model(testX)
+    print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 9, 4)))
 
     # 显示分类结果
     n = testX.shape[0]
@@ -183,7 +195,60 @@ def predict(testX):
         axes[x, y].imshow(reshape(testX[i] * 255, (28, 28)))
         axes[x, y].text(0.5, -1.0, str(label) + "\n%.3f" %
                         confidence, fontsize=14)
-    plt.show()
+    # plt.show()
+    plt.savefig('./pred_result')
+
+
+def convert_2_trt():
+    """将模型转换为tensorrt模型，tensorflow版本为2.0.4"""
+    from tensorflow.python.compiler.tensorrt import trt_convert as trt
+    conversion_params = trt.DEFAULT_TRT_CONVERSION_PARAMS
+    conversion_params = conversion_params._replace(max_workspace_size_bytes=(1<<32))
+    conversion_params = conversion_params._replace(precision_mode="FP32")
+    conversion_params = conversion_params._replace(maximum_cached_engines=100)
+    conversion_params = conversion_params._replace(minimum_segment_size=100)
+    converter = trt.TrtGraphConverterV2(input_saved_model_dir=SAVER_PATH,
+                                        input_saved_model_tags=['serve'],
+                                        input_saved_model_signature_key='serving_default',
+                                        conversion_params=conversion_params)
+    converter.convert()
+    converter.save(TRT_PATH)
+
+
+def trt_predict(testX):
+    """使用tensorrt模型预测输入图片的类型
+
+    Args:
+        testX: The test data features.
+    """
+    # 加载整个模型，包括 graphs 和 weights
+    model = tf.keras.models.load_model(TRT_PATH)
+
+    beg_time = None
+    for i in range(10):
+        if i == 1:
+            beg_time = time.time()
+        labels = model(testX)
+    print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 9, 4)))
+
+    # 显示分类结果
+    n = testX.shape[0]
+    nc = int(ceil(n / 4))
+    f, axes = plt.subplots(nc, 4)
+    for i in range(nc * 4):
+        x = i // 4
+        y = i % 4
+        axes[x, y].axis('off')
+
+        label = argmax(labels[i])
+        confidence = max(labels[i])
+        if i > n:
+            break
+        axes[x, y].imshow(reshape(testX[i] * 255, (28, 28)))
+        axes[x, y].text(0.5, -1.0, str(label) + "\n%.3f" %
+                        confidence, fontsize=14)
+    # plt.show()
+    plt.savefig('./trt_pred_result')
 
 
 if __name__ == "__main__":
@@ -214,3 +279,10 @@ if __name__ == "__main__":
 
     # 预测测试数据中前8个图片的类型
     predict(testX[: 8])
+
+    # 模型转换为tensorrt模型加速推理
+    convert_2_trt()
+
+    # 使用转换后的tensorrt模型预估
+    trt_predict(testX[: 8])
+
