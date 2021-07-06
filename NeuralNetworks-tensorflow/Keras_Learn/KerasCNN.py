@@ -239,7 +239,7 @@ def convert_2_trt():
     converter.convert()
 
     def my_input_fn():
-        inp = np.zeros(shape=(100, 28, 28, 1)).astype(np.float32)
+        inp = np.zeros(shape=(100, 28, 28, 1)).astype(np.float32) # 这里的batch要比预估时的batch要大，否则在预估时会重新构建engine，很耗时
         yield [inp]
 
     converter.build(input_fn=my_input_fn)
