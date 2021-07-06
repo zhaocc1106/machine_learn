@@ -15,6 +15,7 @@ import shutil
 import time
 
 # 3rd-part libs.
+import numpy as np
 from numpy import *
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -23,6 +24,12 @@ MODEL_PATH = "/tmp/kerasCNN/"
 CKPT_PATH = "/tmp/kerasCNN/checkpoint"
 SAVER_PATH = "/tmp/kerasCNN/model_saver"
 TRT_PATH = "/tmp/kerasCNN/trt_model"
+
+# tf.debugging.set_log_device_placement(True)
+gpus = tf.config.experimental.list_physical_devices('GPU')
+for gpu in gpus:
+    tf.config.experimental.set_memory_growth(gpu, True)
+
 
 # print(os.environ['LD_LIBRARY_PATH'])
 
@@ -41,22 +48,22 @@ def create_network(mirrored_strategy, num_class):
         model = tf.keras.models.Sequential()
         # 添加一个卷积层, 32个卷积核，激活函数用relu
         model.add(tf.keras.layers.Conv2D(32, kernel_size=(5, 5), strides=(1, 1),
-                                         activation='relu',
                                          input_shape=[28, 28, 1]
                                          ))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.ReLU())
         # 添加一个max pool层
         model.add(
             tf.keras.layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
         # 添加第二个卷积层
-        model.add(tf.keras.layers.Conv2D(64, (5, 5), activation="relu"))
+        model.add(tf.keras.layers.Conv2D(64, (5, 5)))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.ReLU())
         # 添加第二个max pool层
         model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
         # 添加flatten层
         model.add(tf.keras.layers.Flatten())
         # 添加完全连接层，1000个nn，使用relu激活函数
-        model.add(tf.keras.layers.Dense(1000, activation="relu"))
-        model.add(tf.keras.layers.Dense(1000, activation="relu"))
-        model.add(tf.keras.layers.Dense(1000, activation="relu"))
         model.add(tf.keras.layers.Dense(1000, activation="relu"))
         # 添加完全连接层作为输出层，分成10个类
         model.add(tf.keras.layers.Dense(num_class, activation="softmax"))
@@ -170,14 +177,24 @@ def predict(testX):
     """
     # 加载整个模型，包括 graphs 和 weights
     model = tf.keras.models.load_model(SAVER_PATH)
+    summary_writer = tf.summary.create_file_writer('./orig_tensorboard')
+
+    @tf.function
+    def _pred(model, x):
+        return model(x)
 
     beg_time = None
-    labels = None
-    for i in range(10):
-        if i == 1:
+    for i in range(20):
+        if i == 10:
             beg_time = time.time()
-        labels = model(testX)
-    print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 9, 4)))
+        tf.summary.trace_on(graph=True)
+        # labels = model(testX)
+        labels = _pred(model, testX)
+        with summary_writer.as_default():
+            tf.summary.trace_export('org', step=i)
+
+    summary_writer.close()
+    print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 10, 4)))
 
     # 显示分类结果
     n = testX.shape[0]
@@ -202,17 +219,22 @@ def predict(testX):
 def convert_2_trt():
     """将模型转换为tensorrt模型，tensorflow版本为2.0.4"""
     from tensorflow.python.compiler.tensorrt import trt_convert as trt
-    conversion_params = trt.DEFAULT_TRT_CONVERSION_PARAMS
-    conversion_params = conversion_params._replace(max_workspace_size_bytes=(1<<32))
-    conversion_params = conversion_params._replace(precision_mode="FP32")
-    conversion_params = conversion_params._replace(maximum_cached_engines=100)
-    conversion_params = conversion_params._replace(minimum_segment_size=100)
+    conversion_params = trt.TrtConversionParams(
+        maximum_cached_engines=10
+    )
     converter = trt.TrtGraphConverterV2(input_saved_model_dir=SAVER_PATH,
                                         input_saved_model_tags=['serve'],
                                         input_saved_model_signature_key='serving_default',
                                         conversion_params=conversion_params)
     converter.convert()
+
+    def my_input_fn():
+        inp = np.zeros(shape=(100, 28, 28, 1)).astype(np.float32)
+        yield [inp]
+
+    converter.build(input_fn=my_input_fn)
     converter.save(TRT_PATH)
+    print('Convert completely!')
 
 
 def trt_predict(testX):
@@ -222,14 +244,26 @@ def trt_predict(testX):
         testX: The test data features.
     """
     # 加载整个模型，包括 graphs 和 weights
-    model = tf.keras.models.load_model(TRT_PATH)
+    model = tf.saved_model.load(TRT_PATH)
+
+    summary_writer = tf.summary.create_file_writer('./trt_tensorboard')
+
+    @tf.function
+    def _pred(model, x):
+        return model(x)
 
     beg_time = None
-    for i in range(10):
-        if i == 1:
+    for i in range(20):
+        if i == 10:
             beg_time = time.time()
-        labels = model(testX)
-    print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 9, 4)))
+        tf.summary.trace_on(graph=True)
+        # labels = model(testX)
+        labels = _pred(model, testX)
+        with summary_writer.as_default():
+            tf.summary.trace_export('trt', step=i)
+
+    summary_writer.close()
+    print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 10, 4)))
 
     # 显示分类结果
     n = testX.shape[0]
@@ -285,4 +319,3 @@ if __name__ == "__main__":
 
     # 使用转换后的tensorrt模型预估
     trt_predict(testX[: 8])
-
