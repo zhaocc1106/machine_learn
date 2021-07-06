@@ -21,7 +21,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 MODEL_PATH = "/tmp/kerasCNN/"
-CKPT_PATH = "/tmp/kerasCNN/checkpoint"
+CKPT_PATH = "/tmp/kerasCNN/checkpoint.h5"
 SAVER_PATH = "/tmp/kerasCNN/model_saver"
 TRT_PATH = "/tmp/kerasCNN/trt_model"
 
@@ -61,9 +61,17 @@ def create_network(mirrored_strategy, num_class):
         model.add(tf.keras.layers.ReLU())
         # 添加第二个max pool层
         model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
+        # 添加第三个卷积层
+        model.add(tf.keras.layers.Conv2D(128, (2, 2)))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.ReLU())
+        # 添加第三个max pool层
+        model.add(tf.keras.layers.MaxPooling2D(pool_size=(2, 2)))
         # 添加flatten层
         model.add(tf.keras.layers.Flatten())
         # 添加完全连接层，1000个nn，使用relu激活函数
+        model.add(tf.keras.layers.Dense(1000, activation="relu"))
+        model.add(tf.keras.layers.Dense(1000, activation="relu"))
         model.add(tf.keras.layers.Dense(1000, activation="relu"))
         # 添加完全连接层作为输出层，分成10个类
         model.add(tf.keras.layers.Dense(num_class, activation="softmax"))
@@ -177,7 +185,7 @@ def predict(testX):
     """
     # 加载整个模型，包括 graphs 和 weights
     model = tf.keras.models.load_model(SAVER_PATH)
-    summary_writer = tf.summary.create_file_writer('./orig_tensorboard')
+    # summary_writer = tf.summary.create_file_writer('./orig_tensorboard')
 
     @tf.function
     def _pred(model, x):
@@ -187,13 +195,13 @@ def predict(testX):
     for i in range(20):
         if i == 10:
             beg_time = time.time()
-        tf.summary.trace_on(graph=True)
-        # labels = model(testX)
-        labels = _pred(model, testX)
-        with summary_writer.as_default():
-            tf.summary.trace_export('org', step=i)
+        # tf.summary.trace_on(graph=True)
+        labels = model(testX)
+        # labels = _pred(model, testX)
+        # with summary_writer.as_default():
+        #     tf.summary.trace_export('org', step=i)
 
-    summary_writer.close()
+    # summary_writer.close()
     print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 10, 4)))
 
     # 显示分类结果
@@ -219,9 +227,11 @@ def predict(testX):
 def convert_2_trt():
     """将模型转换为tensorrt模型，tensorflow版本为2.0.4"""
     from tensorflow.python.compiler.tensorrt import trt_convert as trt
-    conversion_params = trt.TrtConversionParams(
-        maximum_cached_engines=10
-    )
+    conversion_params = trt.DEFAULT_TRT_CONVERSION_PARAMS
+    conversion_params = conversion_params._replace(max_workspace_size_bytes=(1<<32))
+    conversion_params = conversion_params._replace(precision_mode="FP32")
+    conversion_params = conversion_params._replace(maximum_cached_engines=100)
+    # conversion_params = conversion_params._replace(minimum_segment_size=100)
     converter = trt.TrtGraphConverterV2(input_saved_model_dir=SAVER_PATH,
                                         input_saved_model_tags=['serve'],
                                         input_saved_model_signature_key='serving_default',
@@ -234,7 +244,7 @@ def convert_2_trt():
 
     converter.build(input_fn=my_input_fn)
     converter.save(TRT_PATH)
-    print('Convert completely!')
+    print('Convert trt completely!')
 
 
 def trt_predict(testX):
@@ -246,7 +256,7 @@ def trt_predict(testX):
     # 加载整个模型，包括 graphs 和 weights
     model = tf.saved_model.load(TRT_PATH)
 
-    summary_writer = tf.summary.create_file_writer('./trt_tensorboard')
+    #summary_writer = tf.summary.create_file_writer('./trt_tensorboard')
 
     @tf.function
     def _pred(model, x):
@@ -256,13 +266,13 @@ def trt_predict(testX):
     for i in range(20):
         if i == 10:
             beg_time = time.time()
-        tf.summary.trace_on(graph=True)
-        # labels = model(testX)
-        labels = _pred(model, testX)
-        with summary_writer.as_default():
-            tf.summary.trace_export('trt', step=i)
+        # tf.summary.trace_on(graph=True)
+        labels = model(testX)
+        # labels = _pred(model, testX)
+        # with summary_writer.as_default():
+        #     tf.summary.trace_export('trt', step=i)
 
-    summary_writer.close()
+    #summary_writer.close()
     print('>>>>>>>>>>>Predict average time: {}s.'.format(round((time.time() - beg_time) / 10, 4)))
 
     # 显示分类结果
@@ -309,7 +319,7 @@ if __name__ == "__main__":
     print(testX.shape[0], 'testX samples')
 
     # 构建并训练分类手写识别数据的cnn模型
-    train_keras_cnn(trainX, trainY, testX, testY)
+    #train_keras_cnn(trainX, trainY, testX, testY)
 
     # 预测测试数据中前8个图片的类型
     predict(testX[: 8])
