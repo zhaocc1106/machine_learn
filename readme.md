@@ -27,7 +27,7 @@
    PCA、SVD
 
 ## 深度学习
-   NeuralNetworks、NeuralNetworks-tensorflow
+   NeuralNetworks(手写神经网络)、NeuralNetworks-tensorflow(tf实现一些模型)
 
 ## 目标检测
    [faster r-cnn模型](https://github.com/zhaocc1106/tf-faster-rcnn)
