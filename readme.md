@@ -31,6 +31,9 @@
 
 ## 目标检测
    [faster r-cnn模型](https://github.com/zhaocc1106/tf-faster-rcnn)
+
+## 推荐相关
+   https://github.com/zhaocc1106/recommend
    
 ## 端到端
    https://github.com/zhaocc1106/end2end_ml
